@@ -1,0 +1,72 @@
+# PyCharm
+# http://www.jetbrains.com/pycharm/webhelp/project.html
+.idea
+.iml
+.settings
+
+
+*.mp3
+
+*.pyc
+*.swp
+*.swo
+
+*.desktop
+*.md~
+*.py~
+
+sphinx_doc/build
+test.py
+user.json
+
+*.bak
+*.vim-bookmarks
+
+\#*
+
+__pycache__
+.cache
+.ipynb_checkpoints
+*.DS_Store
+*.un~
+*.desktop
+app.command
+*.log
+
+cookie*
+.coverage
+
+# user data
+data/*.json
+cache/*.json
+
+# test image
+# feeluown/*.png
+# feeluown/*.jpg
+# feeluown/widgets/*.png
+# feeluown/widgets/*.jpg
+#
+# node
+node_modules
+
+# rope
+*.out
+.ropeproject
+
+dist/
+build/
+feeluown.egg-info/
+
+# Emacs
+.\#*
+\#*\#
+.dir-locals.el
+
+# virtualenv
+.venv
+.venv/
+
+# others
+*.html
+
+.pytest_cache/
