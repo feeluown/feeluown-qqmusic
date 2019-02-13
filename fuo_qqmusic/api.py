@@ -29,6 +29,7 @@ class API(object):
                           'AppleWebKit/537.36 (KHTML, like Gecko) '
                           'Chrome/66.0.3359.181 Mobile Safari/537.36',
         }
+        self._vkey = ''
 
     def get_cover(self, mid, type_):
         """获取专辑、歌手封面
@@ -43,20 +44,20 @@ class API(object):
         url = 'http://u.y.qq.com/cgi-bin/musicu.fcg'
         # 往 payload 添加字段，有可能还可以获取相似歌曲、歌单等
         payload = {
-            "comm": {
-                "g_tk":5381,
-                "uin": 0,
-                "format": "json",
-                "inCharset": "utf-8",
-                "outCharset": "utf-8",
-                "notice": 0,
-                "platform": "h5",
-                "needNewCode": 1
+            'comm': {
+                'g_tk':5381,
+                'uin': 0,
+                'format': 'json',
+                'inCharset': 'utf-8',
+                'outCharset': 'utf-8',
+                'notice': 0,
+                'platform': 'h5',
+                'needNewCode': 1
             },
-            "detail": {
-                "module": "music.pf_song_detail_svr",
-                "method": "get_song_detail",
-                "param": {"song_id": song_id}
+            'detail': {
+                'module': 'music.pf_song_detail_svr',
+                'method': 'get_song_detail',
+                'param': {'song_id': song_id}
             }
         }
         payload_str = json.dumps(payload)
@@ -68,22 +69,39 @@ class API(object):
             return None
         return data_song
 
-    def get_song_url(self, song_mid):
-        url = 'http://i.y.qq.com/v8/playsong.html'
+    def _refresh_vkey(self):
+        url = api_base_url + '/base/fcgi-bin/fcg_music_express_mobile3.fcg'
         params = {
-            'songmid': song_mid,
-            'ADTAG': 'myqq',
-            'from': 'myqq',
-            'channel': 10007100,
+            'loginUin': 123456,
+            'format': 'json',
+            'cid': 205361747,
+            'uin': 123456,
+            'songmid': '003a1tne1nSz1Y',
+            'filename': 'C400003a1tne1nSz1Y.m4a',
+            'guid': 10000
         }
-        # FIXME: set timeout to 2s as the responseis time is quite long
-        response = requests.get(url, params=params, headers=self._headers,
+        resp = requests.get(url, params=params, headers=self._headers,
                                 timeout=2)
-        soup = BeautifulSoup(response.content, 'html.parser')
-        media = soup.select('#h5audio_media')
-        if media:
-            return media[0].get('src')
-        return None
+        rv = resp.json()
+        self._vkey = rv['data']['items'][0]['vkey']
+
+    def get_song_url(self, song_mid, quality):  # F000(flac) A000(ape) M800(320) C600(192) M500(128)
+        if not quality:
+            return None
+        switcher = {
+            'F000': 'flac',
+            'A000': 'ape',
+            'C600': 'm4a'
+        }
+        if self._vkey is '':
+            self._refresh_vkey()
+        filename = '{}{}.{}'.format(
+            quality, song_mid, switcher.get(quality, 'mp3'))
+        # song_url = 'http://dl.stream.qqmusic.qq.com/{}?vkey={}&guid={}&uin={}&fromtag={}'.format(
+        #     filename, self._vkey, 10000, 123456, 8)
+        song_url = 'http://streamoc.music.tc.qq.com/{}?vkey={}&guid={}&uin={}&fromtag={}'.format(
+            filename, self._vkey, 10000, 123456, 8)
+        return song_url
 
     def search(self, keyword, limit=20, page=1):
         path = '/soso/fcgi-bin/client_search_cp'
@@ -91,39 +109,56 @@ class API(object):
         params = {
             # w,n,page are required parameters
             'w': keyword,
+            't': 0,
             'n': limit,
             'page': page,
 
             # positional parameters
             'cr': 1,  # copyright?
+
+            'new_json': 1,
+            'format': 'json',
+            'platform': 'yqq.json'
         }
-        response = requests.get(url, params=params, timeout=self._timeout)
-        content = response.text[9:-1]
-        songs = json.loads(content)['data']['song']['list']
+        resp = requests.get(url, params=params, timeout=self._timeout)
+        songs = resp.json()['data']['song']['list']
         return songs
 
-    def artist_detail(self, artist_id):
+    def artist_detail(self, artist_id, page=1, page_size=50):
         """获取歌手详情"""
         path = '/v8/fcg-bin/fcg_v8_singer_track_cp.fcg'
         url = api_base_url + path
         params = {
             'singerid': artist_id,
-            'songstatus': 1,
             'order': 'listen',
-            'begin': 0,
-            'num': 50,
-            'from': 'h5',
-            'platform': 'h5page',
+            'begin': page - 1,
+            'num': page_size,
+
+            'newsong': 1
         }
         resp = requests.get(url, params=params, timeout=self._timeout)
         rv = resp.json()
         return rv['data']
 
+    def artist_albums(self, artist_id, page=1, page_size=20):
+        url = api_base_url + '/v8/fcg-bin/fcg_v8_singer_album.fcg'
+        params = {
+            'singerid': artist_id,
+            'order': 'time',
+            'begin': page - 1,
+            'num': page_size
+        }
+        response = requests.get(url, params=params)
+        content = response.text[1:-1]
+        return json.loads(content)['data']['list']
+
     def album_detail(self, album_id):
-        url = api_base_url + '/v8/fcg-bin/fcg_v8_album_info_cp.fcg'
+        url = api_base_url + '/v8/fcg-bin/fcg_v8_album_detail_cp.fcg'
         params = {
             'albumid': album_id,
-            'format': 'json'
+            'format': 'json',
+
+            'newsong': 1
         }
         resp = requests.get(url, params=params)
         return resp.json()['data']

@@ -20,25 +20,30 @@ class _SongAlbumSchema(Schema):
 
 
 class QQSongSchema(Schema):
-    identifier = fields.Int(load_from='songid', required=True)
-    mid = fields.Str(load_from='songmid', required=True)
+    identifier = fields.Int(load_from='id', required=True)
     duration = fields.Float(load_from='interval', required=True)
-    title = fields.Str(load_from='songname', required=True)
-
+    title = fields.Str(load_from='name', required=True)
     artists = fields.List(fields.Nested('_SongArtistSchema'), load_from='singer')
+    album = fields.Nested('_SongAlbumSchema', required=True)
 
-    album_id = fields.Int(load_from='albumid', required=True)
-    album_name = fields.Str(load_from='albumname', required=True)
+    files = fields.Dict(load_from='file', missing={})
 
     @post_load
     def create_model(self, data):
         song = QQSongModel(identifier=data['identifier'],
-                           mid=data['mid'],
+                           mid=data['files']['media_mid'],
                            duration=data['duration'] * 1000,
                            title=data['title'],
-                           artists=data.get('artists'))
-        song.album = QQAlbumModel(identifier=data['album_id'],
-                                  name=data['album_name'])
+                           artists=data.get('artists'),
+                           album=data.get('album'),)
+        if data['files'].get('size_320') or data['files'].get('size_320mp3'):
+            song.quality = 'M800'
+        elif data['files'].get('size_aac') or data['files'].get('size_192aac'):
+            song.quality = 'C600'
+        elif data['files'].get('size_128') or data['files'].get('size_128mp3'):
+            song.quality = 'M500'
+        else:
+            song.quality = ''
         return song
 
 
@@ -64,51 +69,29 @@ class QQArtistSchema(Schema):
 
 
 class QQAlbumSchema(Schema):
-    identifier = fields.Int(load_from='id', required=True)
-    mid = fields.Str(load_from='mid', required=True)
-    name = fields.Str(required=True)
-    desc = fields.Str(required=True)
+    album_desc = fields.Dict(load_from='getAlbumDesc', required=True)
+    album_info = fields.Dict(load_from='getAlbumInfo', required=True)
 
-    artist_id = fields.Int(load_from='singerid', required=True)
-    artist_name = fields.Str(load_from='singername', required=True)
+    artist_info = fields.Dict(load_from='getSingerInfo', required=True)
 
     # 有的专辑歌曲列表为 null，比如：fuo://qqmusic/albums/8623
-    songs = fields.List(fields.Nested(QQSongSchema), load_from='list', allow_none=True)
+    songs = fields.List(fields.Nested(QQSongSchema), load_from='getSongInfo', allow_none=True)
 
     @post_load
     def create_model(self, data):
-        artist = QQArtistModel(identifier=data['artist_id'],
-                               name=data['artist_name'])
-        album = QQAlbumModel(identifier=data['identifier'],
-                             mid=data['mid'],
-                             name=data['name'],
-                             desc=data['desc'],
+        artist = QQArtistModel(identifier=data['artist_info']['Fsinger_id'],
+                               name=data['artist_info']['Fsinger_name'].split('/')[0].split('(')[0].strip())
+        album = QQAlbumModel(identifier=data['album_info']['Falbum_id'],
+                             mid=data['album_info']['Falbum_mid'],
+                             name=data['album_info']['Falbum_name'],
+                             desc=data['album_desc']['Falbum_desc'],
                              songs=data['songs'] or [],
                              artists=[artist])
         return album
 
 
-class QQSongDetailSchema(Schema):
-    identifier = fields.Int(load_from='id', required=True)
-    mid = fields.Str(required=True)
-    duration = fields.Float(load_from='interval', required=True)
-    title = fields.Str(load_from='name', required=True)
-    artists = fields.List(fields.Nested('_SongArtistSchema'), load_from='singer')
-    album = fields.Nested('_SongAlbumSchema', required=True)
-
-    @post_load
-    def create_model(self, data):
-        song = QQSongModel(identifier=data['identifier'],
-                           mid=data['mid'],
-                           duration=data['duration'] * 1000,
-                           title=data['title'],
-                           artists=data.get('artists'),
-                           album=data.get('album'),)
-        return song
-
-
 from .models import (
-    QQArtistModel,
     QQSongModel,
+    QQArtistModel,
     QQAlbumModel,
 )  # noqa
