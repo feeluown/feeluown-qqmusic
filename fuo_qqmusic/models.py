@@ -1,3 +1,6 @@
+import logging
+import re
+
 from fuocore.models import (
     BaseModel,
     SongModel,
@@ -9,6 +12,9 @@ from fuocore.models import (
 )
 
 from .provider import provider
+
+
+logger = logging.getLogger(__name__)
 
 
 class QQBaseModel(BaseModel):
@@ -34,18 +40,20 @@ def _deserialize(data, schema_cls):
 
 
 class QQSongModel(SongModel, QQBaseModel):
+    class Meta:
+        fields = ('quality', )
 
     @classmethod
     def get(cls, identifier):
         data = cls._api.get_song_detail(identifier)
-        song = _deserialize(data, QQSongDetailSchema)
+        song = _deserialize(data, QQSongSchema)
         return song
 
     @property
     def url(self):
         if self._url is not None:
             return self._url
-        url = self._api.get_song_url(self.mid)
+        url = self._api.get_song_url(self.mid, self.quality)
         if url is not None:
             self._url = url
         else:
@@ -93,8 +101,7 @@ def search(keyword, **kwargs):
 
 
 from .schemas import (
+    QQSongSchema,
     QQArtistSchema,
     QQAlbumSchema,
-    QQSongSchema,
-    QQSongDetailSchema,
 )  # noqa
