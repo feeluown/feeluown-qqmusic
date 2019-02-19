@@ -79,14 +79,20 @@ class QQAlbumSchema(Schema):
 
     @post_load
     def create_model(self, data):
-        artist = QQArtistModel(identifier=data['artist_info']['Fsinger_id'],
-                               name=data['artist_info']['Fsinger_name'].split('/')[0].split('(')[0].strip())
-        album = QQAlbumModel(identifier=data['album_info']['Falbum_id'],
-                             mid=data['album_info']['Falbum_mid'],
-                             name=data['album_info']['Falbum_name'],
-                             desc=data['album_desc']['Falbum_desc'],
-                             songs=data['songs'] or [],
-                             artists=[artist])
+        singer_name = data['artist_info']['Fsinger_name']
+        # split('/')：有的专辑有个多歌手，只有第一个才是正确的专辑艺人
+        # split('(')：有的非中文歌手拥有别名在括号里
+        singer_name.split('/')[0].split('(')[0].strip()
+        artist = QQArtistModel(
+            identifier=data['artist_info']['Fsinger_id'],
+            name=singer_name)
+        album = QQAlbumModel(
+            identifier=data['album_info']['Falbum_id'],
+            mid=data['album_info']['Falbum_mid'],
+            name=data['album_info']['Falbum_name'],
+            desc=data['album_desc']['Falbum_desc'],
+            songs=data['songs'] or [],
+            artists=[artist])
         return album
 
 

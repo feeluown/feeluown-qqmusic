@@ -27,7 +27,6 @@ setup(
     install_requires=[
         'feeluown',
         'requests',
-        'beautifulsoup4>=4.5.3',
         'marshmallow>=2.13.5'
     ],
     entry_points={

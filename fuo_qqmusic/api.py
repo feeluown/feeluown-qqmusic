@@ -2,7 +2,6 @@ import logging
 import json
 
 import requests
-from bs4 import BeautifulSoup
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +28,13 @@ class API(object):
                           'AppleWebKit/537.36 (KHTML, like Gecko) '
                           'Chrome/66.0.3359.181 Mobile Safari/537.36',
         }
-        self._vkey = ''
+        self._vkey = None
+
+    @property
+    def vkey(self):
+        if self._vkey is None:
+            self._vkey = self.get_vkey()
+        return self._vkey
 
     def get_cover(self, mid, type_):
         """获取专辑、歌手封面
@@ -69,8 +74,10 @@ class API(object):
             return None
         return data_song
 
-    def _refresh_vkey(self):
+    def get_vkey(self):
         url = api_base_url + '/base/fcgi-bin/fcg_music_express_mobile3.fcg'
+        # loginUin 和 uin 这两个参数似乎是可有可无的
+        # songmid 是随意一个真正可用的 song mid, filename 和 songmid 需要对应
         params = {
             'loginUin': 123456,
             'format': 'json',
@@ -81,9 +88,9 @@ class API(object):
             'guid': 10000
         }
         resp = requests.get(url, params=params, headers=self._headers,
-                                timeout=2)
+                            timeout=2)
         rv = resp.json()
-        self._vkey = rv['data']['items'][0]['vkey']
+        return rv['data']['items'][0]['vkey']
 
     def get_song_url(self, song_mid, quality):  # F000(flac) A000(ape) M800(320) C600(192) M500(128)
         if not quality:
@@ -93,14 +100,12 @@ class API(object):
             'A000': 'ape',
             'C600': 'm4a'
         }
-        if self._vkey is '':
-            self._refresh_vkey()
         filename = '{}{}.{}'.format(
             quality, song_mid, switcher.get(quality, 'mp3'))
         # song_url = 'http://dl.stream.qqmusic.qq.com/{}?vkey={}&guid={}&uin={}&fromtag={}'.format(
         #     filename, self._vkey, 10000, 123456, 8)
         song_url = 'http://streamoc.music.tc.qq.com/{}?vkey={}&guid={}&uin={}&fromtag={}'.format(
-            filename, self._vkey, 10000, 123456, 8)
+            filename, self.vkey, 10000, 123456, 8)
         return song_url
 
     def search(self, keyword, limit=20, page=1):
@@ -109,7 +114,7 @@ class API(object):
         params = {
             # w,n,page are required parameters
             'w': keyword,
-            't': 0,
+            't': 0,  # t=0 代表歌曲，专辑:8, 歌手:9
             'n': limit,
             'page': page,
 
@@ -134,6 +139,7 @@ class API(object):
             'begin': page - 1,
             'num': page_size,
 
+            # 有 newsong 字段时，服务端会返回含有 file 字段的字典
             'newsong': 1
         }
         resp = requests.get(url, params=params, timeout=self._timeout)
@@ -149,15 +155,14 @@ class API(object):
             'num': page_size
         }
         response = requests.get(url, params=params)
-        content = response.text[1:-1]
-        return json.loads(content)['data']['list']
+        js = response.json()
+        return js['data']['list']
 
     def album_detail(self, album_id):
         url = api_base_url + '/v8/fcg-bin/fcg_v8_album_detail_cp.fcg'
         params = {
             'albumid': album_id,
             'format': 'json',
-
             'newsong': 1
         }
         resp = requests.get(url, params=params)
