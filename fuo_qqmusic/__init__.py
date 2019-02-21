@@ -17,15 +17,13 @@ logger = logging.getLogger(__name__)
 def enable(app):
     app.library.register(provider)
     if app.mode & App.GuiMode:
-        from feeluown.components.provider import ProviderModel
-
-        pm = ProviderModel(
-            name='QQ 音乐',
-            icon='♫ ',
+        pm = app.pvd_uimgr.create_item(
+            name=provider.identifier,
+            text='QQ 音乐',
+            symbol='♫ ',
             desc='点击登录 QQ 音乐（未实现，欢迎 PR）',
-            on_click=None,
         )
-        app.providers.assoc(provider.identifier, pm)
+        app.pvd_uimgr.add_item(pm)
 
 
 def disable(app):
