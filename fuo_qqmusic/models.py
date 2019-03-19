@@ -40,8 +40,6 @@ def _deserialize(data, schema_cls):
 
 
 class QQSongModel(SongModel, QQBaseModel):
-    class Meta:
-        fields = ('quality', )
 
     @classmethod
     def get(cls, identifier):
@@ -53,7 +51,7 @@ class QQSongModel(SongModel, QQBaseModel):
     def url(self):
         if self._url is not None:
             return self._url
-        url = self._api.get_song_url(self.mid, self.quality)
+        url = self._api.get_song_url(self.mid)
         if url is not None:
             self._url = url
         else:

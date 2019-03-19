@@ -36,14 +36,6 @@ class QQSongSchema(Schema):
                            title=data['title'],
                            artists=data.get('artists'),
                            album=data.get('album'),)
-        if data['files'].get('size_320') or data['files'].get('size_320mp3'):
-            song.quality = 'M800'
-        elif data['files'].get('size_aac') or data['files'].get('size_192aac'):
-            song.quality = 'C600'
-        elif data['files'].get('size_128') or data['files'].get('size_128mp3'):
-            song.quality = 'M500'
-        else:
-            song.quality = ''
         return song
 
 

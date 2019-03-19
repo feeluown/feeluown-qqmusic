@@ -1,5 +1,6 @@
 import logging
 import json
+import random
 
 import requests
 
@@ -28,13 +29,6 @@ class API(object):
                           'AppleWebKit/537.36 (KHTML, like Gecko) '
                           'Chrome/66.0.3359.181 Mobile Safari/537.36',
         }
-        self._vkey = None
-
-    @property
-    def vkey(self):
-        if self._vkey is None:
-            self._vkey = self.get_vkey()
-        return self._vkey
 
     def get_cover(self, mid, type_):
         """获取专辑、歌手封面
@@ -74,39 +68,62 @@ class API(object):
             return None
         return data_song
 
-    def get_vkey(self):
-        url = api_base_url + '/base/fcgi-bin/fcg_music_express_mobile3.fcg'
-        # loginUin 和 uin 这两个参数似乎是可有可无的
-        # songmid 是随意一个真正可用的 song mid, filename 和 songmid 需要对应
+    def get_song_url(self, song_mid):
+        songvkey = str(random.random()).replace("0.", "")
+        data = {
+            "req": {
+                "module": "CDN.SrfCdnDispatchServer",
+                "method": "GetCdnDispatch",
+                "param": {
+                    "guid": "MS",
+                    "calltype": 0,
+                    "userip": ""
+                }
+            },
+            "req_0": {
+                "module": "vkey.GetVkeyServer",
+                "method": "CgiGetVkey",
+                "param": {
+                    'cid': 205361747,
+                    "guid": "MS",
+                    "songmid": [song_mid],
+                    # "filename": [filename],
+                    "songtype": [1],
+                    "uin": "0",
+                    # "loginflag": 1,
+                    # "platform": "20"
+                }
+            },
+            "comm": {
+                "uin": 0,
+                "format": "json",
+                "ct": 24,
+                "cv": 0
+            }
+        }
+        data_str = json.dumps(data)
         params = {
-            'loginUin': 123456,
+            '-': 'getplaysongvkey' + str(songvkey),
+            'g_tk': 5381,
+            'loginUin': 0,
+            'hostUin': 0,
             'format': 'json',
-            'cid': 205361747,
-            'uin': 123456,
-            'songmid': '003a1tne1nSz1Y',
-            'filename': 'C400003a1tne1nSz1Y.m4a',
-            'guid': 10000
+            'inCharset': 'utf8',
+            'outCharset': 'utf8',
+            'notice': 0,
+            'platform': 'yqq.json',
+            'needNewCode': 0,
         }
-        resp = requests.get(url, params=params, headers=self._headers,
-                            timeout=2)
-        rv = resp.json()
-        return rv['data']['items'][0]['vkey']
-
-    def get_song_url(self, song_mid, quality):  # F000(flac) A000(ape) M800(320) C600(192) M500(128)
-        if not quality:
-            return None
-        switcher = {
-            'F000': 'flac',
-            'A000': 'ape',
-            'C600': 'm4a'
-        }
-        filename = '{}{}.{}'.format(
-            quality, song_mid, switcher.get(quality, 'mp3'))
-        # song_url = 'http://dl.stream.qqmusic.qq.com/{}?vkey={}&guid={}&uin={}&fromtag={}'.format(
-        #     filename, self._vkey, 10000, 123456, 8)
-        song_url = 'http://streamoc.music.tc.qq.com/{}?vkey={}&guid={}&uin={}&fromtag={}'.format(
-            filename, self.vkey, 10000, 123456, 8)
-        return song_url
+        # 这里没有把 data=data_str 放在 params 中，因为 QQ 服务端不识别这种写法
+        # 另外测试发现：python(flask) 是可以识别这两种写法的
+        url = 'http://u.y.qq.com/cgi-bin/musicu.fcg?data=' + data_str
+        resp = requests.get(url, params=params, headers=self._headers)
+        js = resp.json()
+        midurlinfo = js['req_0']['data']['midurlinfo']
+        if midurlinfo:
+            song_path = midurlinfo[0]['purl']
+            return 'http://dl.stream.qqmusic.qq.com/{}'.format(song_path)
+        return None
 
     def search(self, keyword, limit=20, page=1):
         path = '/soso/fcgi-bin/client_search_cp'
