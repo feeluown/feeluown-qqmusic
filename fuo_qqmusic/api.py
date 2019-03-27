@@ -121,9 +121,37 @@ class API(object):
         js = resp.json()
         midurlinfo = js['req_0']['data']['midurlinfo']
         if midurlinfo:
-            song_path = midurlinfo[0]['purl']
-            return 'http://dl.stream.qqmusic.qq.com/{}'.format(song_path)
-        return None
+            purl = midurlinfo[0]['purl']
+            prefix = 'http://dl.stream.qqmusic.qq.com/'
+            url = ''
+            # 有部分音乐网页版接口中没有，比如 晴天-周杰伦，
+            # 但是通过下面的黑魔法是可以获取的
+            quality_suffix = [
+                ('M500', 'mp3'),
+                # 经过个人(cosven)测试，M500 品质的成功率非常高
+                # 而下面三个从来不会成功，所以不尝试下面三个
+                # ('F000', 'flac'),
+                # ('A000', 'ape'),
+                # ('M800', 'mp3'),
+            ]
+            C400_filename = midurlinfo[0]['filename']
+            pure_filename = C400_filename[4:-3]
+            vkey = js['req']['data']['vkey']
+            for q, s in quality_suffix:
+                q_filename = q + pure_filename + s
+                url = '{}{}?vkey={}&guid=MS&uin=0&fromtag=8'\
+                    .format(prefix, q_filename, vkey)
+                _resp = requests.head(url, headers=self._headers)
+                if _resp.status_code == 200:
+                    logger.info('song:{} quality:{} url is valid'.format(song_mid, q))
+                    break
+                logger.info('song:{} quality:{} url is invalid'.format(song_mid, q))
+            # 尝试拿到网页版接口的 url
+            if not url and purl:
+                song_path = purl
+                url = prefix + song_path
+            return url
+        return ''
 
     def search(self, keyword, limit=20, page=1):
         path = '/soso/fcgi-bin/client_search_cp'
