@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 
 from fuocore.models import (
     BaseModel,
@@ -49,7 +50,7 @@ class QQSongModel(SongModel, QQBaseModel):
 
     @property
     def url(self):
-        if self._url is not None:
+        if self._url is not None and self._expired_at > time.time():
             return self._url
         url = self._api.get_song_url(self.mid)
         if url is not None:
@@ -60,6 +61,7 @@ class QQSongModel(SongModel, QQBaseModel):
 
     @url.setter
     def url(self, url):
+        self._expired_at = int(time.time()) + 60 * 10
         self._url = url
 
 
