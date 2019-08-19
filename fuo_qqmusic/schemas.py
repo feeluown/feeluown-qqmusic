@@ -21,6 +21,7 @@ class _SongAlbumSchema(Schema):
 
 class QQSongSchema(Schema):
     identifier = fields.Int(load_from='id', required=True)
+    mid = fields.Str(load_from='mid', required=True)
     duration = fields.Float(load_from='interval', required=True)
     title = fields.Str(load_from='name', required=True)
     artists = fields.List(fields.Nested('_SongArtistSchema'), load_from='singer')
@@ -31,7 +32,7 @@ class QQSongSchema(Schema):
     @post_load
     def create_model(self, data):
         song = QQSongModel(identifier=data['identifier'],
-                           mid=data['files']['media_mid'],
+                           mid=data['mid'],
                            duration=data['duration'] * 1000,
                            title=data['title'],
                            artists=data.get('artists'),

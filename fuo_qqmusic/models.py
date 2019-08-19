@@ -41,6 +41,8 @@ def _deserialize(data, schema_cls):
 
 
 class QQSongModel(SongModel, QQBaseModel):
+    class Meta:
+        fields = ('mid', )
 
     @classmethod
     def get(cls, identifier):
