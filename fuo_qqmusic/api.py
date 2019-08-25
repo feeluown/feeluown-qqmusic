@@ -123,7 +123,7 @@ class API(object):
         if midurlinfo:
             purl = midurlinfo[0]['purl']
             prefix = 'http://dl.stream.qqmusic.qq.com/'
-            url = ''
+            valid_url = ''
             # 有部分音乐网页版接口中没有，比如 晴天-周杰伦，
             # 但是通过下面的黑魔法是可以获取的
             quality_suffix = [
@@ -143,14 +143,16 @@ class API(object):
                     .format(prefix, q_filename, vkey)
                 _resp = requests.head(url, headers=self._headers)
                 if _resp.status_code == 200:
+                    valid_url = url
                     logger.info('song:{} quality:{} url is valid'.format(song_mid, q))
                     break
                 logger.info('song:{} quality:{} url is invalid'.format(song_mid, q))
             # 尝试拿到网页版接口的 url
-            if not url and purl:
+            if not valid_url and purl:
                 song_path = purl
-                url = prefix + song_path
-            return url
+                valid_url = prefix + song_path
+                logger.info('song:{} quality:web url is valid'.format(song_mid))
+            return valid_url
         return ''
 
     def search(self, keyword, limit=20, page=1):
