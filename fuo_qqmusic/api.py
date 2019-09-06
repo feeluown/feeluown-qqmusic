@@ -203,7 +203,7 @@ class API(object):
         }
         response = requests.get(url, params=params)
         js = response.json()
-        return js['data']['list']
+        return js['data']
 
     def album_detail(self, album_id):
         url = api_base_url + '/v8/fcg-bin/fcg_v8_album_detail_cp.fcg'

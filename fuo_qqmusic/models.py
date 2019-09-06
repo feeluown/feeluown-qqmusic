@@ -10,6 +10,7 @@ from fuocore.models import (
     ArtistModel,
     SearchModel,
     ModelStage,
+    GeneratorProxy,
 )
 
 from .provider import provider
@@ -38,6 +39,37 @@ def _deserialize(data, schema_cls):
     # 避免在调用 get 方法时进入无限递归。
     obj.stage = ModelStage.gotten
     return obj
+
+
+def create_g(func, identifier, schema=None, func_cover=None):
+    if schema is None:
+        schema = _ArtistSongSchema
+    data = func(identifier, page=1)
+    total = int(data['total'])
+    def g():
+        nonlocal data
+        if data is None:
+            yield from ()
+        else:
+            cur = 1
+            page = 1
+            while True:
+                obj_data_list = data['list']
+                for obj_data in obj_data_list:
+                    if schema == _ArtistSongSchema:
+                        yield _deserialize(obj_data, schema)
+                    else:
+                        def _deserialize_obj(data, schema_cls, func_cover):
+                            schema = schema_cls(strict=True)
+                            obj, _ = schema.load(data)
+                            if schema_cls == _ArtistAlbumSchema:
+                                obj.cover = func_cover(obj.mid, 2)
+                            return obj
+                        yield _deserialize_obj(obj_data, schema, func_cover)
+                    cur += 1
+                page += 1
+                data = func(identifier, page)
+    return GeneratorProxy(g(), total)
 
 
 class QQSongModel(SongModel, QQBaseModel):
@@ -77,12 +109,22 @@ class QQAlbumModel(AlbumModel, QQBaseModel):
 
 
 class QQArtistModel(ArtistModel, QQBaseModel):
+    class Meta:
+        allow_create_songs_g = True
+        allow_create_albums_g = True
+
     @classmethod
     def get(cls, identifier):
         data_artist = cls._api.artist_detail(identifier)
         artist = _deserialize(data_artist, QQArtistSchema)
         artist.cover = cls._api.get_cover(artist.mid, 1)
         return artist
+
+    def create_songs_g(self):
+        return create_g(self._api.artist_detail, self.identifier)
+
+    def create_albums_g(self):
+        return create_g(self._api.artist_albums, self.identifier, _ArtistAlbumSchema, self._api.get_cover)
 
 
 class QQPlaylistModel(PlaylistModel, QQBaseModel):
@@ -106,4 +148,6 @@ from .schemas import (
     QQSongSchema,
     QQArtistSchema,
     QQAlbumSchema,
+    _ArtistSongSchema,
+    _ArtistAlbumSchema,
 )  # noqa
