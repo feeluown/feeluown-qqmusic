@@ -69,8 +69,6 @@ class QQArtistSchema(Schema):
 
     @post_load
     def create_model(self, data):
-        # if data['songs']:
-        #     data['songs'] = [song['value'] for song in data['songs']]
         return QQArtistModel(**data)
 
 

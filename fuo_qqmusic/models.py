@@ -32,43 +32,39 @@ class QQBaseModel(BaseModel):
         raise NotImplementedError
 
 
-def _deserialize(data, schema_cls):
+def _deserialize(data, schema_cls, gotten=True):
     schema = schema_cls(strict=True)
     obj, _ = schema.load(data)
     # XXX: 将 model 设置为 gotten，减少代码编写时的心智负担，
     # 避免在调用 get 方法时进入无限递归。
-    obj.stage = ModelStage.gotten
+    if gotten:
+        obj.stage = ModelStage.gotten
     return obj
 
 
-def create_g(func, identifier, schema=None, func_cover=None):
-    if schema is None:
-        schema = _ArtistSongSchema
+def create_g(func, identifier, schema):
     data = func(identifier, page=1)
     total = int(data['total'])
+
     def g():
         nonlocal data
         if data is None:
             yield from ()
         else:
-            cur = 1
             page = 1
-            while True:
+            while data['list']:
                 obj_data_list = data['list']
                 for obj_data in obj_data_list:
-                    if schema == _ArtistSongSchema:
-                        yield _deserialize(obj_data, schema)
-                    else:
-                        def _deserialize_obj(data, schema_cls, func_cover):
-                            schema = schema_cls(strict=True)
-                            obj, _ = schema.load(data)
-                            if schema_cls == _ArtistAlbumSchema:
-                                obj.cover = func_cover(obj.mid, 2)
-                            return obj
-                        yield _deserialize_obj(obj_data, schema, func_cover)
-                    cur += 1
+                    obj = _deserialize(obj_data, schema, gotten=False)
+                    # FIXME: 由于 feeluown 展示歌手的 album 列表时，
+                    # 会依次同步的去获取 cover，所以我们这里必须先把 cover 初始化好，
+                    # 否则 feeluown 界面会卡住
+                    if schema == _ArtistAlbumSchema:
+                        obj.cover = provider.api.get_cover(obj.mid, 2)
+                    yield obj
                 page += 1
                 data = func(identifier, page)
+
     return GeneratorProxy(g(), total)
 
 
@@ -100,6 +96,9 @@ class QQSongModel(SongModel, QQBaseModel):
 
 
 class QQAlbumModel(AlbumModel, QQBaseModel):
+    class Meta:
+        fields = ['mid']
+
     @classmethod
     def get(cls, identifier):
         data_album = cls._api.album_detail(identifier)
@@ -121,10 +120,14 @@ class QQArtistModel(ArtistModel, QQBaseModel):
         return artist
 
     def create_songs_g(self):
-        return create_g(self._api.artist_detail, self.identifier)
+        return create_g(self._api.artist_detail,
+                        self.identifier,
+                        _ArtistSongSchema)
 
     def create_albums_g(self):
-        return create_g(self._api.artist_albums, self.identifier, _ArtistAlbumSchema, self._api.get_cover)
+        return create_g(self._api.artist_albums,
+                        self.identifier,
+                        _ArtistAlbumSchema)
 
 
 class QQPlaylistModel(PlaylistModel, QQBaseModel):
