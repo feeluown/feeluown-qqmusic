@@ -70,12 +70,13 @@ class API(object):
 
     def get_song_url(self, song_mid):
         songvkey = str(random.random()).replace("0.", "")
+        guid = "MS"
         data = {
             "req": {
                 "module": "CDN.SrfCdnDispatchServer",
                 "method": "GetCdnDispatch",
                 "param": {
-                    "guid": "MS",
+                    "guid": guid,
                     "calltype": 0,
                     "userip": ""
                 }
@@ -85,7 +86,7 @@ class API(object):
                 "method": "CgiGetVkey",
                 "param": {
                     'cid': 205361747,
-                    "guid": "MS",
+                    "guid": guid,
                     "songmid": [song_mid],
                     # "filename": [filename],
                     "songtype": [1],
