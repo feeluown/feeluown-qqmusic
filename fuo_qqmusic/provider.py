@@ -40,5 +40,5 @@ class QQMusicProvider(AbstractProvider):
 provider = QQMusicProvider()
 
 
-from .models import search
+from .models import search  # noqa
 provider.search = search

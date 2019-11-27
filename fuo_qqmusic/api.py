@@ -25,7 +25,8 @@ class API(object):
             'Accept-Encoding': 'gzip,deflate,sdch',
             'Accept-Language': 'zh-CN,zh;q=0.8,gl;q=0.6,zh-TW;q=0.4',
             'Referer': 'http://y.qq.com/',
-            'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N)'
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0;'
+                          ' Nexus 5 Build/MRA58N)'
                           'AppleWebKit/537.36 (KHTML, like Gecko) '
                           'Chrome/66.0.3359.181 Mobile Safari/537.36',
         }
@@ -44,7 +45,7 @@ class API(object):
         # 往 payload 添加字段，有可能还可以获取相似歌曲、歌单等
         payload = {
             'comm': {
-                'g_tk':5381,
+                'g_tk': 5381,
                 'uin': 0,
                 'format': 'json',
                 'inCharset': 'utf-8',
@@ -146,14 +147,17 @@ class API(object):
                 _resp = requests.head(url, headers=self._headers)
                 if _resp.status_code == 200:
                     valid_url = url
-                    logger.info('song:{} quality:{} url is valid'.format(song_mid, q))
+                    logger.info('song:{} quality:{} url is valid'
+                                .format(song_mid, q))
                     break
-                logger.info('song:{} quality:{} url is invalid'.format(song_mid, q))
+                logger.info('song:{} quality:{} url is invalid'
+                            .format(song_mid, q))
             # 尝试拿到网页版接口的 url
             if not valid_url and purl:
                 song_path = purl
                 valid_url = prefix + song_path
-                logger.info('song:{} quality:web url is valid'.format(song_mid))
+                logger.info('song:{} quality:web url is valid'
+                            .format(song_mid))
             return valid_url
         return ''
 

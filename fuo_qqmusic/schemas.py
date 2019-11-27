@@ -32,7 +32,8 @@ class QQSongSchema(Schema):
     mid = fields.Str(data_key='mid', required=True)
     duration = fields.Float(data_key='interval', required=True)
     title = fields.Str(data_key='name', required=True)
-    artists = fields.List(fields.Nested('_SongArtistSchema'), data_key='singer')
+    artists = fields.List(fields.Nested('_SongArtistSchema'),
+                          data_key='singer')
     album = fields.Nested('_SongAlbumSchema', required=True)
 
     files = fields.Dict(data_key='file', missing={})
@@ -65,6 +66,7 @@ class _ArtistAlbumSchema(Schema):
     def create_model(self, data, **kwargs):
         return QQAlbumModel(**data)
 
+
 class QQArtistSchema(Schema):
     """歌手详情 Schema、歌曲歌手简要信息 Schema"""
 
@@ -87,7 +89,8 @@ class QQAlbumSchema(Schema):
     artist_info = fields.Dict(data_key='getSingerInfo', required=True)
 
     # 有的专辑歌曲列表为 null，比如：fuo://qqmusic/albums/8623
-    songs = fields.List(fields.Nested(QQSongSchema), data_key='getSongInfo', allow_none=True)
+    songs = fields.List(fields.Nested(QQSongSchema),
+                        data_key='getSongInfo', allow_none=True)
 
     @post_load
     def create_model(self, data, **kwargs):
