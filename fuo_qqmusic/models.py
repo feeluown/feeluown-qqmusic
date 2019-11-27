@@ -33,8 +33,8 @@ class QQBaseModel(BaseModel):
 
 
 def _deserialize(data, schema_cls, gotten=True):
-    schema = schema_cls(strict=True)
-    obj, _ = schema.load(data)
+    schema = schema_cls()
+    obj = schema.load(data)
     # XXX: 将 model 设置为 gotten，减少代码编写时的心智负担，
     # 避免在调用 get 方法时进入无限递归。
     if gotten:

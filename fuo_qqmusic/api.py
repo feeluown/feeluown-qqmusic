@@ -124,6 +124,7 @@ class API(object):
         if midurlinfo:
             purl = midurlinfo[0]['purl']
             prefix = 'http://dl.stream.qqmusic.qq.com/'
+            prefix = 'http://mobileoc.music.tc.qq.com/'
             valid_url = ''
             # 有部分音乐网页版接口中没有，比如 晴天-周杰伦，
             # 但是通过下面的黑魔法是可以获取的
