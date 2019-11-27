@@ -12,6 +12,9 @@ pip3 install fuo-qqmusic
 
 ## changelog
 
+### 0.2 (2019-11-27)
+- 使用 marshmallow>=3.0 
+
 ### 0.1.5 (2019-10-28)
 - 支持获取歌手的所有歌曲与专辑
 
