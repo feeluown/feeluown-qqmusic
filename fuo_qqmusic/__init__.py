@@ -23,7 +23,14 @@ def enable(app):
             symbol='♫ ',
             desc='点击登录 QQ 音乐（未实现，欢迎 PR）',
         )
+        pm.clicked.connect(show_login) # noqa
         app.pvd_uimgr.add_item(pm)
+
+
+def show_login():
+    from fuo_qqmusic.auth import QQMusicAuthenticator
+    panel = QQMusicAuthenticator()
+    panel.exec()
 
 
 def disable(app):
