@@ -1,14 +1,14 @@
-import hashlib
-import json
+# import hashlib
+# import json
 import logging
-import os
+# import os
 
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import (QVBoxLayout, QLineEdit,
                              QDialog, QPushButton,
                              QLabel)
 
-from .consts import USER_PW_FILE
+# from .consts import USER_PW_FILE
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class LoginDialog(QDialog):
         self.captcha_id = 0
 
         self.cookie_input = QLineEdit(self)
- 
+
         self.captcha_label = QLabel(self)
         self.captcha_label.hide()
         self.captcha_input = QLineEdit(self)
@@ -97,13 +97,10 @@ class LoginDialog(QDialog):
         self.show_hint('正在登录...')
 
         login_response = self.verify_userpw(user_data['cookie'])
-        res_json = login_response.json()
-        
+
         if login_response.status_code == 200:
             user = self.create_user()
             self.login_success.emit(user)
             self.captcha_input.hide()
             self.captcha_label.hide()
             self.hide()
-
-        

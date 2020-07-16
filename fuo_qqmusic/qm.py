@@ -36,7 +36,7 @@ class Qm(QObject):
             return
         logger.debug('Trying to load last login user...')
         user = LoginController.load()
-        #if user is None or 'MUSIC_U' not in user.cookies:
+        # if user is None or 'MUSIC_U' not in user.cookies:
         if user is None:
             logger.debug('Trying to load last login user...failed')
             self.login_dialog.show()
@@ -48,7 +48,8 @@ class Qm(QObject):
             asyncio.ensure_future(self.login_as(user))
 
     def show_fav_albums(self):
-        self._app.ui.songs_table_container.show_albums_coll(self._user.fav_albums)
+        self._app.ui.songs_table_container.show_albums_coll(
+            self._user.fav_albums)
 
     def show_rec_songs(self):
         self._app.ui.songs_table_container.show_songs(self._user.rec_songs)

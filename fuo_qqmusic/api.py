@@ -7,8 +7,6 @@ import random
 import time
 import requests
 
-from requests_toolbelt.utils import dump
-
 logger = logging.getLogger(__name__)
 
 api_base_url = 'http://c.y.qq.com'
@@ -408,7 +406,7 @@ class API(object):
                 'module': "mb_track_radio_svr",
                 'method': "get_radio_track",
                 'param': {
-                    'id':99,
+                    'id': 99,
                     'firstplay': 1,
                     'num': 15
                 },
@@ -426,7 +424,7 @@ class API(object):
             },
         }
 
-        data_str =  json.dumps(data)
+        data_str = json.dumps(data)
 
         url = 'http://u.y.qq.com/cgi-bin/musicu.fcg?data=' + data_str
 

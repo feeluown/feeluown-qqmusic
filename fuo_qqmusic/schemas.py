@@ -1,3 +1,5 @@
+
+
 from marshmallow import Schema, fields, post_load, EXCLUDE
 import logging
 logger = logging.getLogger(__name__)
@@ -217,7 +219,7 @@ class QQUserSchema(Schema):
         return QQUserModel(**data)
 
 
-from .models import (
+from .models import (  # noqa
     QQUserAlbumModel,
     QQMvModel,
     QQSongModel,
@@ -225,4 +227,4 @@ from .models import (
     QQAlbumModel,
     QQUserModel,
     QQPlaylistModel,
-)  # noqa
+)

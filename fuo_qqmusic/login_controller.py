@@ -4,10 +4,11 @@ import os
 
 from .api import api
 from .schemas import QQUserSchema
-from .models import _deserialize,base_model
+from .models import _deserialize, base_model
 from .consts import USERS_INFO_FILE
 
 logger = logging.getLogger(__name__)
+
 
 def create_user(user_info):
     name = user_info.json()['data']['creator']['nick']
@@ -15,6 +16,7 @@ def create_user(user_info):
         name=name
     ), QQUserSchema)
     return user
+
 
 class LoginController(object):
     _api = api
@@ -32,18 +34,20 @@ class LoginController(object):
         return create_user(user_info)
 
     @classmethod
-    def cookie_to_dict(cls,cookie):
+    def cookie_to_dict(cls, cookie):
         return {item.split('=')[0]: item.split('=')[1] for item in cookie.split('; ')}
 
     @classmethod
-    def check(cls,cookie):
+    def check(cls, cookie):
         # data = cls._api.login(cookie, pw)
         base_model._api.set_cookie(cookie)
         cls._api.set_cookie(cookie)
         cookie_dict = cls.cookie_to_dict(cookie)
-        base_model._api.set_uin(cookie_dict['wxuin'] if 'wxuin' in cookie_dict else cookie_dict['uin'])
-        cls._api.set_uin(cookie_dict['wxuin'] if 'wxuin' in cookie_dict else cookie_dict['uin'])
-        cls._api.uin.replace('o','')
+        base_model._api.set_uin(
+            cookie_dict['wxuin'] if 'wxuin' in cookie_dict else cookie_dict['uin'])
+        cls._api.set_uin(
+            cookie_dict['wxuin'] if 'wxuin' in cookie_dict else cookie_dict['uin'])
+        cls._api.uin.replace('o', '')
         return cls._api.get_user_info()
 
     @classmethod
@@ -79,7 +83,7 @@ class LoginController(object):
                 return None
             data = json.loads(text)
             cookie = next(iter(data.keys()))
-            self.cookie = data[cookie]
+            # self.cookie = data[cookie]
             user_data = data[cookie]
             uid = user_data['uid']
             name = user_data['name']

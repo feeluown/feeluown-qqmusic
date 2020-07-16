@@ -1,8 +1,10 @@
+
+
 import logging
 import time
 import base64
 
-from fuocore.media import Quality, Media
+from fuocore.media import Quality
 from fuocore.models import cached_field
 
 from fuocore.models import (
@@ -15,16 +17,18 @@ from fuocore.models import (
     ArtistModel,
     SearchModel,
     UserModel,
-    SearchType
+    # SearchType
 )
 
-from fuocore.reader import RandomSequentialReader, SequentialReader
+
+from fuocore.reader import RandomSequentialReader
 
 from .provider import provider
-from .api import api
+
 from .excs import QQIOError
 
 logger = logging.getLogger(__name__)
+
 
 def _deserialize(data, schema_cls, gotten=True):
     schema = schema_cls()
@@ -48,6 +52,7 @@ class QQBaseModel(BaseModel):
     def get(cls, identifier):
 
         raise NotImplementedError
+
 
 class QQMvModel(MvModel, QQBaseModel):
     class Meta:
@@ -133,14 +138,14 @@ class QQSongModel(SongModel, QQBaseModel):
             content=lyric
         )
         return self._lyric
-    
+
     @lyric.setter
     def lyric(self, value):
         self._lyric = value
 
     @property
     def mv(self):
-        
+
         if self._mv is not None:
             return self._mv
         # 这里可能会先获取一次 mvid
@@ -148,7 +153,7 @@ class QQSongModel(SongModel, QQBaseModel):
         if mv is not None:
             self._mv = mv
             return self._mv
-        
+
         return None
 
     @mv.setter
@@ -179,6 +184,7 @@ class QQAlbumModel(AlbumModel, QQBaseModel):
     def desc(self, value):
         self._desc = value
 
+
 class QQUserAlbumModel(PlaylistModel, QQBaseModel):
     class Meta:
         fields = ('uid',)
@@ -188,7 +194,7 @@ class QQUserAlbumModel(PlaylistModel, QQBaseModel):
         data = self._api.get_album_songs(self.mid)
         if data is None:
             raise QQIOError('server responses with error status code')
-        
+
         song_list = data
 
         def read_func(start, end):
@@ -198,12 +204,13 @@ class QQUserAlbumModel(PlaylistModel, QQBaseModel):
                 track = _deserialize(song, QQSongSchema)
                 songs.append(track)
             return songs
-        
+
         count = len(song_list)
         reader = RandomSequentialReader(count,
                                         read_func=read_func,
                                         max_per_read=200)
         return reader
+
 
 class QQArtistModel(ArtistModel, QQBaseModel):
     class Meta:
@@ -227,6 +234,7 @@ class QQArtistModel(ArtistModel, QQBaseModel):
                         self.identifier,
                         _ArtistAlbumSchema)
 
+
 class QQPlaylistModel(PlaylistModel, QQBaseModel):
     class Meta:
         fields = ('uid',)
@@ -236,11 +244,11 @@ class QQPlaylistModel(PlaylistModel, QQBaseModel):
         data = self._api.get_playlist(self.identifier)
         if data is None:
             raise QQIOError('server responses with error status code')
-        
+
         songlist = data
 
         count = songlist['cur_song_num']
-        
+
         song_list = songlist['songlist']
 
         def read_func(start, end):
@@ -255,8 +263,10 @@ class QQPlaylistModel(PlaylistModel, QQBaseModel):
                                         max_per_read=200)
         return reader
 
+
 class QQSearchModel(SearchModel, QQBaseModel):
     pass
+
 
 class QQUserModel(UserModel, QQBaseModel):
     class Meta:
@@ -270,13 +280,14 @@ class QQUserModel(UserModel, QQBaseModel):
         # user_brief = cls._api.user_brief(identifier)
         # user.update(user_brief)
         playlists = cls._api.user_playlists()['list']
-        user['name'] = cls._api.get_user_info().json()['data']['creator']['nick']
+        user['name'] = cls._api.get_user_info().json()[
+            'data']['creator']['nick']
         user['playlists'] = []
         user['fav_playlists'] = []
-  
+
         for pl in playlists:
-            user['playlists'].append( cls._api.get_playlist( pl['dissid'] ))
-        
+            user['playlists'].append(cls._api.get_playlist(pl['dissid']))
+
         # FIXME: GUI模式下无法显示歌单描述
 
         user = _deserialize(user, QQUserSchema)
@@ -313,7 +324,7 @@ class QQUserModel(UserModel, QQBaseModel):
         songslist_id = self._api.get_recommend_songs()
         songlist = self._api.get_playlist(songslist_id)
         songs = songlist['songlist']
-        if not songs == None:
+        if songs is None:
             return [_deserialize(song_data, QQSongSchema)
                     for song_data in songs]
 
@@ -325,6 +336,7 @@ class QQUserModel(UserModel, QQBaseModel):
         return [_deserialize(song_data, QQSongSchema)
                 for song_data in songs_data]
 
+
 def search(keyword, **kwargs):
     data_songs = provider.api.search(keyword)
     songs = []
@@ -333,9 +345,10 @@ def search(keyword, **kwargs):
         songs.append(song)
     return QQSearchModel(songs=songs)
 
+
 base_model = QQBaseModel()
 
-from .schemas import (
+from .schemas import (  # noqa
     QQUserAlbumSchema,
     QQPlaylistSchema,
     QQMvSchema,
@@ -346,4 +359,4 @@ from .schemas import (
     QQAlbumSchema,
     _ArtistSongSchema,
     _ArtistAlbumSchema,
-)  # noqa
+)
