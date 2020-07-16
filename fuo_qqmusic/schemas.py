@@ -1,7 +1,6 @@
+from marshmallow import Schema, fields, post_load, EXCLUDE
 import logging
 logger = logging.getLogger(__name__)
-
-from marshmallow import Schema, fields, post_load, EXCLUDE
 
 
 class BaseSchema(Schema):
@@ -20,6 +19,7 @@ class _SongArtistSchema(Schema):
     def create_model(self, data, **kwargs):
         return QQArtistModel(**data)
 
+
 class _SongAlbumSchema(Schema):
     identifier = fields.Int(data_key='id', required=True)
     name = fields.Str(data_key='name', required=True)
@@ -27,6 +27,7 @@ class _SongAlbumSchema(Schema):
     @post_load
     def create_model(self, data, **kwargs):
         return QQAlbumModel(**data)
+
 
 class QQMvUrlSchema(Schema):
     freeflow_url = fields.List(fields.Str(
@@ -42,7 +43,7 @@ class QQMvSchema(Schema):
     def create_model(self, data, **kwargs):
 
         url = data['url']
-        
+
         fhd = hd = sd = ld = None
         for item in url:
             # print("item",item)
@@ -61,9 +62,11 @@ class QQMvSchema(Schema):
             elif item['file_type'] == 0:
                 pass
             else:
-                logger.warning('There exists another quality:%s mv.', item['file_type'])
+                logger.warning(
+                    'There exists another quality:%s mv.', item['file_type'])
         data['q_url_mapping'] = dict(fhd=fhd, hd=hd, sd=sd, ld=ld)
         return QQMvModel(**data)
+
 
 class QQSongSchema(Schema):
     identifier = fields.Int(data_key='songid', required=True)
@@ -82,6 +85,7 @@ class QQSongSchema(Schema):
                            artists=data.get('artists'),
                            album=data.get('album'),)
         return song
+
 
 class QQSongDetailSchema(Schema):
     identifier = fields.Int(data_key='id', required=True)
@@ -104,12 +108,14 @@ class QQSongDetailSchema(Schema):
                            album=data.get('album'),)
         return song
 
+
 class _ArtistSongSchema(Schema):
     value = fields.Nested(QQSongSchema, data_key='musicData')
 
     @post_load
     def create_model(self, data, **kwargs):
         return data['value']
+
 
 class _ArtistAlbumSchema(Schema):
     identifier = fields.Int(data_key='albumID', required=True)
@@ -119,6 +125,7 @@ class _ArtistAlbumSchema(Schema):
     @post_load
     def create_model(self, data, **kwargs):
         return QQAlbumModel(**data)
+
 
 class QQArtistSchema(Schema):
     """歌手详情 Schema、歌曲歌手简要信息 Schema"""
@@ -168,23 +175,18 @@ class QQAlbumSchema(Schema):
             artists=[artist])
         return album
 
+
 class QQUserAlbumSchema(Schema):
     identifier = fields.Int(required=True, data_key='albumid')
     mid = fields.Str(required=True, data_key='albummid')
     name = fields.Str(required=True, data_key='albumname')
     cover = fields.Url(required=True, data_key='pic')
-    # songs field maybe null, though it can't be null in model
-    # songs = fields.List(fields.Nested(QQSongSchema),
-    #                     data_key='songs',
-    #                     allow_none=True)
 
     @post_load
     def create_model(self, data, **kwargs):
         # if data.get('desc') is None:
         #     data['desc'] = ''
         return QQUserAlbumModel(**data)
-
-
 
 
 class QQPlaylistSchema(Schema):
@@ -205,11 +207,10 @@ class QQPlaylistSchema(Schema):
 
 
 class QQUserSchema(Schema):
-    # identifier = fields.Int(required=True, data_key='id')
+
     name = fields.Str(required=True)
     playlists = fields.List(fields.Nested(QQPlaylistSchema))
     fav_playlists = fields.List(fields.Nested(QQPlaylistSchema))
-    # cookies = fields.Dict()
 
     @post_load
     def create_model(self, data, **kwargs):

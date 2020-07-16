@@ -205,7 +205,6 @@ class QQUserAlbumModel(PlaylistModel, QQBaseModel):
                                         max_per_read=200)
         return reader
 
-
 class QQArtistModel(ArtistModel, QQBaseModel):
     class Meta:
         allow_create_songs_g = True
@@ -245,9 +244,8 @@ class QQPlaylistModel(PlaylistModel, QQBaseModel):
         song_list = songlist['songlist']
 
         def read_func(start, end):
-
             songs = []
-            for song in song_list:
+            for song in song_list[start:end]:
                 track = _deserialize(song, QQSongSchema)
                 songs.append(track)
             return songs

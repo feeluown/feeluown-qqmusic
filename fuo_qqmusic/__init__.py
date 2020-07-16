@@ -8,7 +8,7 @@ from .provider import provider
 
 __alias__ = 'QQ 音乐'
 __feeluown_version__ = '1.1.0'
-__version__ = '0.1a0'
+__version__ = '0.3a0'
 __desc__ = 'QQ 音乐'
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ def enable(app):
             name=provider.identifier,
             text='QQ 音乐',
             symbol='♫ ',
-            desc='点击登录 QQ 音乐（未实现，欢迎 PR）',
+            desc='点击登录 QQ 音乐',
         )
         item.clicked.connect(qm.ready_to_login)
         qm._pm = item

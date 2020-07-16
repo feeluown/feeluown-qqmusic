@@ -31,10 +31,8 @@ class QQProvider(AbstractProvider):
     #     finally:
     #         self.auth(old_user)
 
-    # def auth(self, user):
-    #     assert user.cookies is not None
-    #     self._user = user
-    #     self.api.load_cookies(user.cookies)
+    def auth(self, user):
+        self._user = user
 
 
 provider = QQProvider()

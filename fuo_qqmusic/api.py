@@ -252,7 +252,7 @@ class API(object):
         return response
 
     def get_playlist(self, id):
-        
+
         url = 'http://c.y.qq.com/qzone/fcg-bin/fcg_ucc_getcdinfo_byids_cp.fcg'
         params = {
             'type': 1,
@@ -312,7 +312,7 @@ class API(object):
         #     response = requests.get(url, headers=self._headers,
         #                         timeout=self._timeout)
         #     # 由于这里单个歌曲信息的键值不同，需要修改
-            
+
         #     for song in response.json()['albumSonglist']['data']['songList']:
         #         songInfo = song['songInfo']
         #         songInfo['songname'] = songInfo.pop('name')
@@ -323,11 +323,11 @@ class API(object):
 
         return res_json['data']
 
-    def get_album_songs(self,mid):
+    def get_album_songs(self, mid):
         url = 'https://u.y.qq.com/cgi-bin/musicu.fcg?g_tk=5381&format=json&inCharset=utf8&outCharset=utf-8&data=%7B%22comm%22%3A%7B%22ct%22%3A24%2C%22cv%22%3A10000%7D%2C%22albumSonglist%22%3A%7B%22method%22%3A%22GetAlbumSongList%22%2C%22param%22%3A%7B%22albumMid%22%3A%22{album_mid}%22%2C%22albumID%22%3A0%2C%22begin%22%3A0%2C%22num%22%3A999%2C%22order%22%3A2%7D%2C%22module%22%3A%22music.musichallAlbum.AlbumSongList%22%7D%7D'.format(album_mid=mid
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                )
+                                                                                                                                                                                                                                                                                                                                                                                                                                                   )
         response = requests.get(url, headers=self._headers,
-                            timeout=self._timeout)
+                                timeout=self._timeout)
 
         # 由于这里的歌曲信息的键值不同，故修改
         res_json = []
@@ -380,7 +380,6 @@ class API(object):
         return res_json
 
     def get_mv(self, vid):
-        # 往 payload 添加字段，有可能还可以获取相似歌曲、歌单等
         data = {
             'getMvUrl': {
                 'module': "gosrf.Stream.MvUrlProxy",
@@ -401,6 +400,47 @@ class API(object):
         # res_json = json.loads(response.text[18:len(response.text)-1])
 
         return response.json()
+
+    def get_radio_music(self):
+
+        data = {
+            'songlist': {
+                'module': "mb_track_radio_svr",
+                'method': "get_radio_track",
+                'param': {
+                    'id':99,
+                    'firstplay': 1,
+                    'num': 15
+                },
+            },
+            'radiolist': {
+                'module': "pf.radiosvr",
+                'method': "GetRadiolist",
+                'param': {
+                    'ct': "24"
+                },
+            },
+            'comm': {
+                'ct': 24,
+                'cv': 0
+            },
+        }
+
+        data_str =  json.dumps(data)
+
+        url = 'http://u.y.qq.com/cgi-bin/musicu.fcg?data=' + data_str
+
+        response = requests.get(url, headers=self._headers,
+                                timeout=self._timeout)
+
+        res_json = []
+        for track in response.json()['songlist']['data']['tracks']:
+            track['songid'] = track.pop('id')
+            track['songmid'] = track.pop('mid')
+            track['songname'] = track.pop('name')
+            res_json.append(track)
+
+        return res_json
 
 
 api = API()

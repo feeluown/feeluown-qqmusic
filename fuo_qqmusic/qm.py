@@ -54,21 +54,21 @@ class Qm(QObject):
         self._app.ui.songs_table_container.show_songs(self._user.rec_songs)
 
     async def login_as(self, user):
-        # provider.auth(user)
+        provider.auth(user)
         self._user = user
         # LoginController.save(user)
         left_panel = self._app.ui.left_panel
         left_panel.playlists_con.show()
         left_panel.my_music_con.show()
 
-        # mymusic_fm_item = self._app.mymusic_uimgr.create_item('📻 私人 FM')
-        # mymusic_fm_item.clicked.connect(self.activate_fm)
+        mymusic_fm_item = self._app.mymusic_uimgr.create_item('📻 私人 FM')
+        mymusic_fm_item.clicked.connect(self.activate_fm)
         mymusic_rec_item = self._app.mymusic_uimgr.create_item('📅 每日推荐')
         mymusic_rec_item.clicked.connect(self.show_rec_songs)
         mymusic_albums_item = self._app.mymusic_uimgr.create_item('♥ 我的专辑')
         mymusic_albums_item.clicked.connect(self.show_fav_albums)
         self._app.mymusic_uimgr.clear()
-        # self._app.mymusic_uimgr.add_item(mymusic_fm_item)
+        self._app.mymusic_uimgr.add_item(mymusic_fm_item)
         self._app.mymusic_uimgr.add_item(mymusic_rec_item)
         self._app.mymusic_uimgr.add_item(mymusic_albums_item)
 
@@ -85,6 +85,7 @@ class Qm(QObject):
 
     def fetch_fm_songs(self, *args, **kwargs):
         songs = provider._user.get_radio()  # noqa
+        print(songs)
         if songs is None:
             raise QQIOError('unknown error: get no radio songs')
         return songs
