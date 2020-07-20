@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 class LoginDialog(QDialog):
     login_success = pyqtSignal([object])
 
-    def __init__(self, verify_captcha=None, verify_userpw=None, create_user=None,
+    def __init__(self, verify_captcha=None, verify_userpw=None,
+                 create_user=None,
                  parent=None):
         super().__init__(parent)
 

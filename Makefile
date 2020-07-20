@@ -3,7 +3,7 @@
 all: test
 
 lint:
-	flake8 fuo_qqmusic/ --max-line-length=1024
+	flake8 fuo_qqmusic/
 
 unittest: pytest
 

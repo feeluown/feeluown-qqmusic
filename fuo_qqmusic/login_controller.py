@@ -35,7 +35,8 @@ class LoginController(object):
 
     @classmethod
     def cookie_to_dict(cls, cookie):
-        return {item.split('=')[0]: item.split('=')[1] for item in cookie.split('; ')}
+        return {item.split('=')[0]: item.split('=')[1]
+                for item in cookie.split('; ')}
 
     @classmethod
     def check(cls, cookie):
@@ -44,9 +45,11 @@ class LoginController(object):
         cls._api.set_cookie(cookie)
         cookie_dict = cls.cookie_to_dict(cookie)
         base_model._api.set_uin(
-            cookie_dict['wxuin'] if 'wxuin' in cookie_dict else cookie_dict['uin'])
+            cookie_dict['wxuin']
+            if 'wxuin' in cookie_dict else cookie_dict['uin'])
         cls._api.set_uin(
-            cookie_dict['wxuin'] if 'wxuin' in cookie_dict else cookie_dict['uin'])
+            cookie_dict['wxuin']
+            if 'wxuin' in cookie_dict else cookie_dict['uin'])
         cls._api.uin.replace('o', '')
         return cls._api.get_user_info()
 
