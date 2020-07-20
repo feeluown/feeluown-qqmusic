@@ -1,4 +1,8 @@
+
+
 from marshmallow import Schema, fields, post_load, EXCLUDE
+import logging
+logger = logging.getLogger(__name__)
 
 
 class BaseSchema(Schema):
@@ -27,14 +31,72 @@ class _SongAlbumSchema(Schema):
         return QQAlbumModel(**data)
 
 
+class QQMvUrlSchema(Schema):
+    freeflow_url = fields.List(fields.Str(
+        required=True), ata_key='freeflow_url')
+    file_type = fields.Int(data_key='filetype', required=True)
+
+
+class QQMvSchema(Schema):
+    url = fields.List(fields.Nested(QQMvUrlSchema),
+                      data_key='mp4', required=True)
+
+    @post_load
+    def create_model(self, data, **kwargs):
+
+        url = data['url']
+
+        fhd = hd = sd = ld = None
+        for item in url:
+            # print("item",item)
+            if item['file_type'] == 40:
+                if (item['freeflow_url']):
+                    fhd = item['freeflow_url'][0]
+            elif item['file_type'] == 30:
+                if (item['freeflow_url']):
+                    hd = item['freeflow_url'][0]
+            elif item['file_type'] == 20:
+                if (item['freeflow_url']):
+                    sd = item['freeflow_url'][0]
+            elif item['file_type'] == 10:
+                if (item['freeflow_url']):
+                    ld = item['freeflow_url'][0]
+            elif item['file_type'] == 0:
+                pass
+            else:
+                logger.warning(
+                    'There exists another quality:%s mv.', item['file_type'])
+        data['q_url_mapping'] = dict(fhd=fhd, hd=hd, sd=sd, ld=ld)
+        return QQMvModel(**data)
+
+
 class QQSongSchema(Schema):
+    identifier = fields.Int(data_key='songid', required=True)
+    mid = fields.Str(data_key='songmid', required=True)
+    duration = fields.Float(data_key='interval', required=True)
+    title = fields.Str(data_key='songname', required=True)
+    artists = fields.List(fields.Nested('_SongArtistSchema'),
+                          data_key='singer')
+
+    @post_load
+    def create_model(self, data, **kwargs):
+        song = QQSongModel(identifier=data['identifier'],
+                           mid=data['mid'],
+                           duration=data['duration'] * 1000,
+                           title=data['title'],
+                           artists=data.get('artists'),
+                           album=data.get('album'),)
+        return song
+
+
+class QQSongDetailSchema(Schema):
     identifier = fields.Int(data_key='id', required=True)
     mid = fields.Str(data_key='mid', required=True)
     duration = fields.Float(data_key='interval', required=True)
     title = fields.Str(data_key='name', required=True)
     artists = fields.List(fields.Nested('_SongArtistSchema'),
                           data_key='singer')
-    album = fields.Nested('_SongAlbumSchema', required=True)
+    album = fields.Nested('_SongAlbumSchema', required=True, data_key='album')
 
     files = fields.Dict(data_key='file', missing={})
 
@@ -116,8 +178,53 @@ class QQAlbumSchema(Schema):
         return album
 
 
-from .models import (
+class QQUserAlbumSchema(Schema):
+    identifier = fields.Int(required=True, data_key='albumid')
+    mid = fields.Str(required=True, data_key='albummid')
+    name = fields.Str(required=True, data_key='albumname')
+    cover = fields.Url(required=True, data_key='pic')
+
+    @post_load
+    def create_model(self, data, **kwargs):
+        # if data.get('desc') is None:
+        #     data['desc'] = ''
+        return QQUserAlbumModel(**data)
+
+
+class QQPlaylistSchema(Schema):
+    identifier = fields.Int(required=True, data_key='disstid')
+    dirid = fields.Int(required=True, data_key='dirid')
+    name = fields.Str(required=True, data_key='dissname')
+    cover = fields.Url(required=True, data_key='logo')
+    # songs field maybe null, though it can't be null in model
+    songs = fields.List(fields.Nested(QQSongSchema),
+                        data_key='songlist',
+                        allow_none=True)
+
+    @post_load
+    def create_model(self, data, **kwargs):
+        # if data.get('desc') is None:
+        #     data['desc'] = ''
+        return QQPlaylistModel(**data)
+
+
+class QQUserSchema(Schema):
+
+    name = fields.Str(required=True)
+    playlists = fields.List(fields.Nested(QQPlaylistSchema))
+    fav_playlists = fields.List(fields.Nested(QQPlaylistSchema))
+
+    @post_load
+    def create_model(self, data, **kwargs):
+        return QQUserModel(**data)
+
+
+from .models import (  # noqa
+    QQUserAlbumModel,
+    QQMvModel,
     QQSongModel,
     QQArtistModel,
     QQAlbumModel,
-)  # noqa
+    QQUserModel,
+    QQPlaylistModel,
+)
