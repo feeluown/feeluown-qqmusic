@@ -1,6 +1,6 @@
 import logging
 
-from fuocore.media import Quality
+from fuocore.media import Quality, Media
 from fuocore.models import cached_field
 from fuocore.models import (
     BaseModel,
@@ -122,20 +122,17 @@ class QQLyricModel(LyricModel, QQBaseModel):
 
 
 class QQSongModel(SongModel, QQBaseModel):
+
     class Meta:
-        fields = ('mid', 'mvid')
-        fields_no_get = ('mv', 'lyric')
+        fields = ('mid', 'mvid', 'q_media_mapping')
+        fields_no_get = ('mv', 'lyric', 'q_media_mapping')
+        support_multi_quality = True
 
     @classmethod
     def get(cls, identifier):
         data = cls._api.get_song_detail(identifier)
         song = _deserialize(data, QQSongSchema)
         return song
-
-    @cached_field(ttl=600)
-    def url(self):
-        url = self._api.get_song_url(self.mid)
-        return url
 
     @cached_field()
     def lyric(self):
@@ -146,6 +143,36 @@ class QQSongModel(SongModel, QQBaseModel):
         if self.mvid is None:
             return None
         return QQMvModel.get(self.mvid)
+
+    @cached_field(ttl=1000)
+    def q_media_mapping(self):
+        """fetch media info and save it in q_media_mapping"""
+        q_urls_mapping = self._api.get_song_url(self.mid)
+        q_bitrate_mapping = {'shq': 1000,
+                             'hq': 800,
+                             'sq': 500,
+                             'lq': 64}
+        q_media_mapping = {}
+        for quality, url in q_urls_mapping.items():
+            bitrate = q_bitrate_mapping[quality]
+            q_media_mapping[quality] = Media(url, bitrate=bitrate)
+        self.q_media_mapping = q_media_mapping
+        return q_media_mapping
+
+    @cached_field(ttl=600)
+    def url(self):
+        medias = list(self.q_media_mapping.values())
+        if medias:
+            return medias[0].url
+        return ''
+
+    def list_quality(self):
+        if self.q_media_mapping is None:
+            self._refresh_url()
+        return list(self.q_media_mapping.keys())
+
+    def get_media(self, quality):
+        return self.q_media_mapping.get(quality)
 
 
 class QQAlbumModel(AlbumModel, QQBaseModel):

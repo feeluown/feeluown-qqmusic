@@ -14,16 +14,6 @@ from .excs import QQIOError
 logger = logging.getLogger(__name__)
 
 api_base_url = 'http://c.y.qq.com'
-COMMON_PARAMS = {
-    'loginUin': 0,
-    'hostUin': 0,
-    'g_tk': 5381,
-    'inCharset': 'utf8',
-    'outCharset': 'utf-8',
-    'notice': 0,
-    'platform': 'yqq',
-    'needNewCode': 0,
-}
 
 
 class CodeShouldBe0(QQIOError):
@@ -59,14 +49,21 @@ class API(object):
                           'AppleWebKit/537.36 (KHTML, like Gecko) '
                           'Chrome/66.0.3359.181 Mobile Safari/537.36',
         }
-        self._cookies = {}
+        self.set_cookies(None)
 
     def set_cookies(self, cookies):
         """
 
         :type cookies: dict
         """
-        self._cookies = cookies or {}
+        if cookies:
+            self._cookies = cookies
+            self._uin = self.get_uin_from_cookies(cookies)
+            self._guid = cookies.get('guid', 'MS')
+        else:
+            self._cookies = {}
+            self._uin = 0
+            self._guid = 'MS'  # 暂时不知道 guid 有什么用
 
     def get_uin_from_cookies(self, cookies):
         if 'wxuin' in cookies:
@@ -246,6 +243,18 @@ class API(object):
         CodeShouldBe0.check(js)
         return js
 
+    def get_common_params(self):
+        return {
+            'loginUin': self._uin,
+            'hostUin': 0,
+            'g_tk': 5381,
+            'inCharset': 'utf8',
+            'outCharset': 'utf-8',
+            'notice': 0,
+            'platform': 'yqq',
+            'needNewCode': 0,
+        }
+
     def get_mv(self, vid):
         payload = {
             'getMvUrl': {
@@ -293,12 +302,13 @@ class API(object):
         return res_json
 
     def get_song_detail(self, song_id):
+        uin = self._uin
         song_id = int(song_id)
         # 往 payload 添加字段，有可能还可以获取相似歌曲、歌单等
         payload = {
             'comm': {
                 'g_tk': 5381,
-                'uin': 0,
+                'uin': uin,
                 'format': 'json',
                 'inCharset': 'utf-8',
                 'outCharset': 'utf-8',
@@ -318,9 +328,11 @@ class API(object):
             return None
         return data_song
 
-    def get_song_url(self, song_mid, uin='0'):
+    def get_song_url(self, song_mid):
+        uin = self._uin
         songvkey = str(random.random()).replace("0.", "")
-        guid = "MS"
+        guid = self._guid
+        # filename = f'C400{song_mid}.m4a'
         data = {
             "req": {
                 "module": "CDN.SrfCdnDispatchServer",
@@ -335,7 +347,7 @@ class API(object):
                 "module": "vkey.GetVkeyServer",
                 "method": "CgiGetVkey",
                 "param": {
-                    'cid': 205361747,
+                    "cid": 205361747,
                     "guid": guid,
                     "songmid": [song_mid],
                     # "filename": [filename],
@@ -368,47 +380,67 @@ class API(object):
         # 这里没有把 data=data_str 放在 params 中，因为 QQ 服务端不识别这种写法
         # 另外测试发现：python(flask) 是可以识别这两种写法的
         url = 'http://u.y.qq.com/cgi-bin/musicu.fcg?data=' + data_str
-        resp = requests.get(url, params=params, headers=self._headers)
+        # 如果是绿钻会员，这里带上 cookies，就能请求到收费歌曲的 url
+        resp = requests.get(url, params=params,
+                            headers=self._headers, cookies=self._cookies)
         js = resp.json()
-        midurlinfo = js['req_0']['data']['midurlinfo']
+        midurlinfo = js['req_0'].get('data', {}).get('midurlinfo')
         if midurlinfo:
             purl = midurlinfo[0]['purl']
             prefix = 'http://dl.stream.qqmusic.qq.com/'
             prefix = 'http://mobileoc.music.tc.qq.com/'
-            valid_url = ''
-            # 有部分音乐网页版接口中没有，比如 晴天-周杰伦，
-            # 但是通过下面的黑魔法是可以获取的
+
+            # 经过个人(cosven)测试，无论是普通还是绿钻用户，下面几个都会失败
             quality_suffix = [
-                ('M500', 'mp3'),
-                # 经过个人(cosven)测试，M500 品质的成功率非常高
-                # 而下面三个从来不会成功，所以不尝试下面三个
-                # ('F000', 'flac'),
-                # ('A000', 'ape'),
-                # ('M800', 'mp3'),
+                # ('sq', 'M500', 'mp3'),
+                # ('shq', 'F000', 'flac'),
+                # ('hq', 'M800', 'mp3'),
+                # ('shq', 'A000', 'ape'),
             ]
             C400_filename = midurlinfo[0]['filename']
             pure_filename = C400_filename[4:-3]
-            vkey = js['req']['data']['vkey']
-            for q, s in quality_suffix:
+
+            req_data = js['req']['data']
+            testfilewifi = req_data.get('testfilewifi', '')
+            vkey = req_data['vkey']
+
+            # 抓客户端的包，发现 guid/uin/vkey 三个参数配上对非常重要。
+            # 尝试了客户端的 cookie 拷贝过来，还是请求不到无损音乐。
+            if testfilewifi:
+                params_str = testfilewifi.split('?')[1]
+            else:
+                params_str = f'vkey={vkey}&guid=MS&uin=0&fromtag=8'
+
+            # 如果前两个音质都不行，我们认为后面的音乐也都不可以，
+            # 目前通过这样简单的策略来节省请求次数
+            max_try_count = 2
+            failed_try_count = 0
+            valid_urls = {}
+            for quality, q, s in quality_suffix:
+                if quality in valid_urls:
+                    continue
                 q_filename = q + pure_filename + s
-                url = '{}{}?vkey={}&guid=MS&uin={}&fromtag=8'\
-                    .format(prefix, q_filename, vkey, uin)
-                _resp = requests.head(url, headers=self._headers)
+                # 通过抓客户端接口可以发现，这个 uin 和用户 uin 不是一个东西
+                # 这个 uin 似乎只有三位数
+                url = f'{prefix}{q_filename}?{params_str}'
+                print(url)
+                _resp = requests.head(url, headers=self._headers, cookies=self._cookies)
                 if _resp.status_code == 200:
-                    valid_url = url
-                    logger.info('song:{} quality:{} url is valid'
-                                .format(song_mid, q))
+                    valid_urls[quality] = url
+                    logger.info(f'song:{song_mid} quality:{q} url is valid')
+                    continue
+                logger.info(f'song:{song_mid} quality:{q} url is invalid')
+                failed_try_count += 1
+                if failed_try_count >= max_try_count:
                     break
-                logger.info('song:{} quality:{} url is invalid'
-                            .format(song_mid, q))
             # 尝试拿到网页版接口的 url
-            if not valid_url and purl:
+            if not valid_urls and purl:
                 song_path = purl
-                valid_url = prefix + song_path
-                logger.info('song:{} quality:web url is valid'
-                            .format(song_mid))
-            return valid_url
-        return ''
+                url = prefix + song_path
+                valid_urls['lq'] = url
+                logger.info(f'song:{song_mid} quality:web url is valid')
+            return valid_urls
+        return {}
 
 
 api = API()
