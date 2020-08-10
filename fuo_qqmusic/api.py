@@ -1,13 +1,26 @@
+#!/usr/bin/env python
+# encoding: UTF-8
+
+import re
 import logging
 import json
 import random
-
+import time
 import requests
 
+from .excs import QQIOError
 
 logger = logging.getLogger(__name__)
 
 api_base_url = 'http://c.y.qq.com'
+
+
+class CodeShouldBe0(QQIOError):
+    def __init__(self, data):
+        self._code = data['code']
+
+    def __str__(self):
+        return f'json code field should be 0, got {self._code}'
 
 
 class API(object):
@@ -30,6 +43,23 @@ class API(object):
                           'AppleWebKit/537.36 (KHTML, like Gecko) '
                           'Chrome/66.0.3359.181 Mobile Safari/537.36',
         }
+        self._cookies = {}
+
+    def set_cookies(self, cookies):
+        """
+
+        :type cookies: dict
+        """
+        self._cookies = cookies or {}
+
+    def get_uin_from_cookies(self, cookies):
+        if 'wxuin' in cookies:
+            # a sample wxuin: o1152921504803324670
+            # remove the 'o' prefix
+            uin = cookies.get('wxuin')[1:]
+        else:
+            uin = cookies.get('uin')
+        return uin
 
     def get_cover(self, mid, type_):
         """获取专辑、歌手封面
@@ -67,9 +97,10 @@ class API(object):
         data_song = data['detail']['data']['track_info']
         if data_song['id'] <= 0:
             return None
+
         return data_song
 
-    def get_song_url(self, song_mid):
+    def get_song_url(self, song_mid, uin='0'):
         songvkey = str(random.random()).replace("0.", "")
         guid = "MS"
         data = {
@@ -91,13 +122,13 @@ class API(object):
                     "songmid": [song_mid],
                     # "filename": [filename],
                     "songtype": [1],
-                    "uin": "0",
+                    "uin": uin,
                     # "loginflag": 1,
                     # "platform": "20"
                 }
             },
             "comm": {
-                "uin": 0,
+                "uin": uin,
                 "format": "json",
                 "ct": 24,
                 "cv": 0
@@ -107,7 +138,7 @@ class API(object):
         params = {
             '-': 'getplaysongvkey' + str(songvkey),
             'g_tk': 5381,
-            'loginUin': 0,
+            'loginUin': uin,
             'hostUin': 0,
             'format': 'json',
             'inCharset': 'utf8',
@@ -142,8 +173,8 @@ class API(object):
             vkey = js['req']['data']['vkey']
             for q, s in quality_suffix:
                 q_filename = q + pure_filename + s
-                url = '{}{}?vkey={}&guid=MS&uin=0&fromtag=8'\
-                    .format(prefix, q_filename, vkey)
+                url = '{}{}?vkey={}&guid=MS&uin={}&fromtag=8'\
+                    .format(prefix, q_filename, vkey, uin)
                 _resp = requests.head(url, headers=self._headers)
                 if _resp.status_code == 200:
                     valid_url = url
@@ -220,3 +251,167 @@ class API(object):
         }
         resp = requests.get(url, params=params)
         return resp.json()['data']
+
+    def get_user_info(self, uid):
+        """
+        this API can be called only when user has logged in
+        """
+        url = api_base_url + '/rsc/fcgi-bin/fcg_get_profile_homepage.fcg'
+        params = {
+            # 这两个字段意义不明，不过至少固定为此值时可正常使用
+            'cid': 205360838,
+            'reqfrom': 1,
+            'userid': uid
+        }
+        resp = requests.get(url, params=params, headers=self._headers,
+                            cookies=self._cookies, timeout=self._timeout)
+        js = resp.json()
+        if js['code'] != 0:
+            raise CodeShouldBe0(js)
+        return js['data']
+
+    def get_playlist(self, pid):
+        url = api_base_url + '/qzone/fcg-bin/fcg_ucc_getcdinfo_byids_cp.fcg'
+        params = {
+            'type': 1,
+            'utf8': 1,
+            'disstid': pid,
+            'format': 'json',
+        }
+        resp = requests.get(url, params=params, headers=self._headers,
+                            cookies=self._cookies, timeout=self._timeout)
+        js = resp.json()
+        if js['code'] != 0:
+            raise CodeShouldBe0(js)
+        return js['cdlist'][0]
+
+    def get_recommend_songs_pid(self):
+        """get the playlist id of recommended songs"""
+        url = 'https://c.y.qq.com/node/musicmac/v6/index.html'
+        resp = requests.get(url, headers=self._headers,
+                            cookies=self._cookies, timeout=self._timeout)
+        # find this line, and the data-rid field value is the playlist id
+        # <a data-type="10014" data-rid="5187073319">今日私享</a>
+        text = resp.text
+        p = re.compile(r'data-rid="(\d+)">今日私享<')
+        m = p.search(text)
+        if m is None:
+            return None
+        return m.group(1)
+
+    def get_user_favorite_albums(self, uid, start=0, end=100):
+        url = api_base_url + '/fav/fcgi-bin/fcg_get_profile_order_asset.fcg'
+        params = {
+            'ct': 20,  # 不知道此字段什么含义
+            'reqtype': 2,
+            'sin': start,  # 每一页的开始
+            'ein': end,  # 每一页的结尾，目前假设最多收藏 30 个专辑
+            'cid': 205360956,
+            'reqfrom': 1,
+            'userid': uid
+        }
+        resp = requests.get(url, params=params, headers=self._headers,
+                            cookies=self._cookies, timeout=self._timeout)
+        js = resp.json()
+        if js['code'] != 0:
+            raise CodeShouldBe0(js)
+        return js['data']
+
+    def user_playlists(self, uid):
+        url = 'http://c.y.qq.com/rsc/fcgi-bin/fcg_get_profile_homepage.fcg'
+
+        params = {
+            'cid': 205360838,  # 意义不明
+            'reqfrom': 1,
+            'userid': uid
+        }
+        response = requests.get(url, params=params, headers=self._headers,
+                                timeout=self._timeout)
+        play_list = response.json()['data']['mydiss']
+
+        return play_list
+
+    def get_lyric_by_songmid(self, songmid):
+        url = 'http://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg'
+
+        params = {
+            'songmid': songmid,
+            'pcachetime': int(round(time.time() * 1000)),
+            'g_tk': 5381,
+            'loginUin': 0,
+            'hostUin': 0,
+            'inCharset': 'utf8',
+            'outCharset': 'utf-8',
+            'notice': 0,
+            'platform': 'yqq',
+            'needNewCode': 0,
+        }
+        headers = self._headers
+        headers['Referer'] = 'https://y.qq.com'
+
+        response = requests.get(url, params=params, headers=headers,
+                                timeout=self._timeout)
+        res_json = json.loads(response.text[18:-1])
+        return res_json
+
+    def get_mv(self, vid):
+        data = {
+            'getMvUrl': {
+                'module': "gosrf.Stream.MvUrlProxy",
+                'method': "GetMvUrls",
+                'param': {
+                    "vids": [vid],
+                    'request_typet': 10001
+                }
+            }
+        }
+
+        data_str = json.dumps(data)
+        url = 'https://u.y.qq.com/cgi-bin/musicu.fcg?data=' + data_str
+        resp = requests.get(url, headers=self._headers,
+                            timeout=self._timeout)
+        return resp.json()
+
+    def get_radio_music(self):
+
+        data = {
+            'songlist': {
+                'module': "mb_track_radio_svr",
+                'method': "get_radio_track",
+                'param': {
+                    'id': 99,
+                    'firstplay': 1,
+                    'num': 15
+                },
+            },
+            'radiolist': {
+                'module': "pf.radiosvr",
+                'method': "GetRadiolist",
+                'param': {
+                    'ct': "24"
+                },
+            },
+            'comm': {
+                'ct': 24,
+                'cv': 0
+            },
+        }
+
+        data_str = json.dumps(data)
+
+        url = 'http://u.y.qq.com/cgi-bin/musicu.fcg?data=' + data_str
+
+        response = requests.get(url, headers=self._headers,
+                                timeout=self._timeout)
+
+        res_json = []
+        for track in response.json()['songlist']['data']['tracks']:
+            track['songid'] = track.pop('id')
+            track['songmid'] = track.pop('mid')
+            track['songname'] = track.pop('name')
+            res_json.append(track)
+
+        return res_json
+
+
+api = API()

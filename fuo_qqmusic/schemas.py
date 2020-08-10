@@ -1,4 +1,8 @@
+
+
 from marshmallow import Schema, fields, post_load, EXCLUDE
+import logging
+logger = logging.getLogger(__name__)
 
 
 class BaseSchema(Schema):
@@ -7,6 +11,18 @@ class BaseSchema(Schema):
 
 
 Schema = BaseSchema
+
+
+def pop_album_from_data(data):
+    album_id = data.pop('albumid')
+    album_mid = data.pop('albummid')
+    album_name = data.pop('albumname')
+    album_data = {
+        'identifier': album_id,
+        'mid': album_mid,
+        'name': album_name,
+    }
+    return QQAlbumModel(**album_data)
 
 
 class _SongArtistSchema(Schema):
@@ -35,7 +51,6 @@ class QQSongSchema(Schema):
     artists = fields.List(fields.Nested('_SongArtistSchema'),
                           data_key='singer')
     album = fields.Nested('_SongAlbumSchema', required=True)
-
     files = fields.Dict(data_key='file', missing={})
 
     @post_load
@@ -116,8 +131,71 @@ class QQAlbumSchema(Schema):
         return album
 
 
-from .models import (
+class _PlaylistSongSchema(Schema):
+    """SongSchema for song in a playlist"""
+    identifier = fields.Int(data_key='songid', required=True)
+    mid = fields.Str(data_key='songmid', required=True)
+    duration = fields.Float(data_key='interval', required=True)
+    title = fields.Str(data_key='songname', required=True)
+    artists = fields.List(fields.Nested('_SongArtistSchema'),
+                          data_key='singer')
+    albumid = fields.Int(data_key='albumid', required=True)
+    albummid = fields.Str(data_key='albummid', required=True)
+    albumname = fields.Str(data_key='albumname', required=True)
+
+    @post_load
+    def create_model(self, data, **kwargs):
+        data['duration'] = data['duration'] * 1000
+        album = pop_album_from_data(data)
+        song = QQSongModel(album=album, **data)
+        return song
+
+
+class QQPlaylistSchema(Schema):
+    identifier = fields.Int(required=True, data_key='disstid')
+    name = fields.Str(required=True, data_key='dissname')
+    cover = fields.Url(required=True, data_key='logo')
+    # songs field maybe null, though it can't be null in model
+    songs = fields.List(fields.Nested(_PlaylistSongSchema),
+                        data_key='songlist',
+                        allow_none=True)
+
+    @post_load
+    def create_model(self, data, **kwargs):
+        return QQPlaylistModel(**data)
+
+
+class _UserPlaylistSchema(Schema):
+    identifier = fields.Int(data_key='dissid', required=True)
+    name = fields.Str(data_key='title', required=True)
+
+    @post_load
+    def create_model(self, data, **kwargs):
+        return QQPlaylistModel(**data)
+
+
+class QQUserSchema(Schema):
+    creator = fields.Dict(required=True)
+    mydiss = fields.Dict(required=True)
+
+    @post_load
+    def create_model(self, data, **kwargs):
+        creator = data['creator']
+        playlists_data = data['mydiss']['list']
+        schema = _UserPlaylistSchema()
+        playlists = []
+        for each in playlists_data:
+            playlist = schema.load(each)
+            playlists.append(playlist)
+        return QQUserModel(identifier=creator['uin'],
+                           name=creator['nick'],
+                           playlists=playlists)
+
+
+from .models import (  # noqa
     QQSongModel,
     QQArtistModel,
     QQAlbumModel,
-)  # noqa
+    QQUserModel,
+    QQPlaylistModel,
+)

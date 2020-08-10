@@ -1,5 +1,6 @@
 import logging
-import time
+
+from fuocore.models import cached_field
 
 from fuocore.models import (
     BaseModel,
@@ -8,27 +9,15 @@ from fuocore.models import (
     AlbumModel,
     ArtistModel,
     SearchModel,
+    UserModel,
     ModelStage,
-    GeneratorProxy,
 )
+
+from fuocore.reader import SequentialReader, wrap as reader_wrap
 
 from .provider import provider
 
-
 logger = logging.getLogger(__name__)
-
-
-class QQBaseModel(BaseModel):
-    _api = provider.api
-
-    class Meta:
-        allow_get = True
-        provider = provider
-        fields = ('mid', )
-
-    @classmethod
-    def get(cls, identifier):
-        raise NotImplementedError
 
 
 def _deserialize(data, schema_cls, gotten=True):
@@ -64,12 +53,27 @@ def create_g(func, identifier, schema):
                 page += 1
                 data = func(identifier, page)
 
-    return GeneratorProxy(g(), total)
+    return SequentialReader(g(), total)
+
+
+class QQBaseModel(BaseModel):
+    _api = provider.api
+
+    class Meta:
+        allow_get = True
+        provider = provider
+        fields = ('mid', )
+
+    @classmethod
+    def get(cls, identifier):
+
+        raise NotImplementedError
 
 
 class QQSongModel(SongModel, QQBaseModel):
     class Meta:
-        fields = ('mid', )
+        fields = ('mid',)
+        fields_no_get = ('mv', 'lyric')
 
     @classmethod
     def get(cls, identifier):
@@ -77,21 +81,10 @@ class QQSongModel(SongModel, QQBaseModel):
         song = _deserialize(data, QQSongSchema)
         return song
 
-    @property
+    @cached_field(ttl=600)
     def url(self):
-        if self._url is not None and self._expired_at > time.time():
-            return self._url
         url = self._api.get_song_url(self.mid)
-        if url is not None:
-            self._url = url
-        else:
-            self._url = ''
-        return self._url
-
-    @url.setter
-    def url(self, url):
-        self._expired_at = int(time.time()) + 60 * 10
-        self._url = url
+        return url
 
 
 class QQAlbumModel(AlbumModel, QQBaseModel):
@@ -101,6 +94,8 @@ class QQAlbumModel(AlbumModel, QQBaseModel):
     @classmethod
     def get(cls, identifier):
         data_album = cls._api.album_detail(identifier)
+        if data_album is None:
+            return None
         album = _deserialize(data_album, QQAlbumSchema)
         album.cover = cls._api.get_cover(album.mid, 2)
         return album
@@ -130,11 +125,45 @@ class QQArtistModel(ArtistModel, QQBaseModel):
 
 
 class QQPlaylistModel(PlaylistModel, QQBaseModel):
-    pass
+    class Meta:
+        allow_create_songs_g = True
+
+    @classmethod
+    def get(cls, identifier):
+        data = cls._api.get_playlist(identifier)
+        return _deserialize(data, QQPlaylistSchema)
+
+    def create_songs_g(self):
+        # 歌单曲目数不能超过 1000，所以它可能不需要分页
+        return reader_wrap(self.songs)
 
 
 class QQSearchModel(SearchModel, QQBaseModel):
     pass
+
+
+class QQUserModel(UserModel, QQBaseModel):
+    class Meta:
+        fields = ('cookies',)
+        fields_no_get = ('cookies', 'rec_songs', 'rec_playlists',
+                         'fav_artists', 'fav_albums', )
+
+    @classmethod
+    def get(cls, identifier):
+        data = cls._api.get_user_info(identifier)
+        return _deserialize(data, QQUserSchema)
+
+    @cached_field(ttl=5)  # ttl should be 0
+    def fav_albums(self):
+        # TODO: fetch more if total count > 100
+        albums = self._api.user_favorite_albums(self.identifier)
+        return [_deserialize(album, QQAlbumSchema) for album in albums]
+
+    @cached_field(ttl=5)  # ttl should be 0
+    def rec_songs(self):
+        pid = self._api.get_recommend_songs_pid()
+        playlist = QQPlaylistModel.get(pid)
+        return playlist.songs
 
 
 def search(keyword, **kwargs):
@@ -146,10 +175,14 @@ def search(keyword, **kwargs):
     return QQSearchModel(songs=songs)
 
 
-from .schemas import (
+base_model = QQBaseModel()
+
+from .schemas import (  # noqa
+    QQPlaylistSchema,
+    QQUserSchema,
     QQSongSchema,
     QQArtistSchema,
     QQAlbumSchema,
     _ArtistSongSchema,
     _ArtistAlbumSchema,
-)  # noqa
+)
