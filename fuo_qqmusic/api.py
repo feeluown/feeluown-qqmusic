@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # encoding: UTF-8
 
+import base64
 import re
 import logging
 import json
@@ -13,6 +14,16 @@ from .excs import QQIOError
 logger = logging.getLogger(__name__)
 
 api_base_url = 'http://c.y.qq.com'
+COMMON_PARAMS = {
+    'loginUin': 0,
+    'hostUin': 0,
+    'g_tk': 5381,
+    'inCharset': 'utf8',
+    'outCharset': 'utf-8',
+    'notice': 0,
+    'platform': 'yqq',
+    'needNewCode': 0,
+}
 
 
 class CodeShouldBe0(QQIOError):
@@ -21,6 +32,11 @@ class CodeShouldBe0(QQIOError):
 
     def __str__(self):
         return f'json code field should be 0, got {self._code}'
+
+    @classmethod
+    def check(cls, data):
+        if data['code'] != 0:
+            raise cls(data)
 
 
 class API(object):
@@ -68,129 +84,6 @@ class API(object):
         """
         return 'http://y.gtimg.cn/music/photo_new/T00{}R800x800M000{}.jpg' \
             .format(type_, mid)
-
-    def get_song_detail(self, song_id):
-        song_id = int(song_id)
-        url = 'http://u.y.qq.com/cgi-bin/musicu.fcg'
-        # 往 payload 添加字段，有可能还可以获取相似歌曲、歌单等
-        payload = {
-            'comm': {
-                'g_tk': 5381,
-                'uin': 0,
-                'format': 'json',
-                'inCharset': 'utf-8',
-                'outCharset': 'utf-8',
-                'notice': 0,
-                'platform': 'h5',
-                'needNewCode': 1
-            },
-            'detail': {
-                'module': 'music.pf_song_detail_svr',
-                'method': 'get_song_detail',
-                'param': {'song_id': song_id}
-            }
-        }
-        payload_str = json.dumps(payload)
-        response = requests.post(url, data=payload_str, headers=self._headers,
-                                 timeout=self._timeout)
-        data = response.json()
-        data_song = data['detail']['data']['track_info']
-        if data_song['id'] <= 0:
-            return None
-
-        return data_song
-
-    def get_song_url(self, song_mid, uin='0'):
-        songvkey = str(random.random()).replace("0.", "")
-        guid = "MS"
-        data = {
-            "req": {
-                "module": "CDN.SrfCdnDispatchServer",
-                "method": "GetCdnDispatch",
-                "param": {
-                    "guid": guid,
-                    "calltype": 0,
-                    "userip": ""
-                }
-            },
-            "req_0": {
-                "module": "vkey.GetVkeyServer",
-                "method": "CgiGetVkey",
-                "param": {
-                    'cid': 205361747,
-                    "guid": guid,
-                    "songmid": [song_mid],
-                    # "filename": [filename],
-                    "songtype": [1],
-                    "uin": uin,
-                    # "loginflag": 1,
-                    # "platform": "20"
-                }
-            },
-            "comm": {
-                "uin": uin,
-                "format": "json",
-                "ct": 24,
-                "cv": 0
-            }
-        }
-        data_str = json.dumps(data)
-        params = {
-            '-': 'getplaysongvkey' + str(songvkey),
-            'g_tk': 5381,
-            'loginUin': uin,
-            'hostUin': 0,
-            'format': 'json',
-            'inCharset': 'utf8',
-            'outCharset': 'utf8',
-            'notice': 0,
-            'platform': 'yqq.json',
-            'needNewCode': 0,
-        }
-        # 这里没有把 data=data_str 放在 params 中，因为 QQ 服务端不识别这种写法
-        # 另外测试发现：python(flask) 是可以识别这两种写法的
-        url = 'http://u.y.qq.com/cgi-bin/musicu.fcg?data=' + data_str
-        resp = requests.get(url, params=params, headers=self._headers)
-        js = resp.json()
-        midurlinfo = js['req_0']['data']['midurlinfo']
-        if midurlinfo:
-            purl = midurlinfo[0]['purl']
-            prefix = 'http://dl.stream.qqmusic.qq.com/'
-            prefix = 'http://mobileoc.music.tc.qq.com/'
-            valid_url = ''
-            # 有部分音乐网页版接口中没有，比如 晴天-周杰伦，
-            # 但是通过下面的黑魔法是可以获取的
-            quality_suffix = [
-                ('M500', 'mp3'),
-                # 经过个人(cosven)测试，M500 品质的成功率非常高
-                # 而下面三个从来不会成功，所以不尝试下面三个
-                # ('F000', 'flac'),
-                # ('A000', 'ape'),
-                # ('M800', 'mp3'),
-            ]
-            C400_filename = midurlinfo[0]['filename']
-            pure_filename = C400_filename[4:-3]
-            vkey = js['req']['data']['vkey']
-            for q, s in quality_suffix:
-                q_filename = q + pure_filename + s
-                url = '{}{}?vkey={}&guid=MS&uin={}&fromtag=8'\
-                    .format(prefix, q_filename, vkey, uin)
-                _resp = requests.head(url, headers=self._headers)
-                if _resp.status_code == 200:
-                    valid_url = url
-                    logger.info('song:{} quality:{} url is valid'
-                                .format(song_mid, q))
-                    break
-                logger.info('song:{} quality:{} url is invalid'
-                            .format(song_mid, q))
-            # 尝试拿到网页版接口的 url
-            if not valid_url and purl:
-                song_path = purl
-                valid_url = prefix + song_path
-                logger.info('song:{} quality:web url is valid'
-                            .format(song_mid))
-            return valid_url
-        return ''
 
     def search(self, keyword, limit=20, page=1):
         path = '/soso/fcgi-bin/client_search_cp'
@@ -332,30 +225,29 @@ class API(object):
         return play_list
 
     def get_lyric_by_songmid(self, songmid):
-        url = 'http://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg'
-
+        url = api_base_url + '/lyric/fcgi-bin/fcg_query_lyric_new.fcg'
         params = {
             'songmid': songmid,
             'pcachetime': int(round(time.time() * 1000)),
-            'g_tk': 5381,
-            'loginUin': 0,
-            'hostUin': 0,
-            'inCharset': 'utf8',
-            'outCharset': 'utf-8',
-            'notice': 0,
-            'platform': 'yqq',
-            'needNewCode': 0,
+            'format': 'json',
         }
-        headers = self._headers
-        headers['Referer'] = 'https://y.qq.com'
-
-        response = requests.get(url, params=params, headers=headers,
+        response = requests.get(url, params=params, headers=self._headers,
                                 timeout=self._timeout)
-        res_json = json.loads(response.text[18:-1])
-        return res_json
+        js = response.json()
+        CodeShouldBe0.check(js)
+        lyric = js['lyric'] or ''
+        return base64.b64decode(lyric).decode()
+
+    def rpc(self, payload):
+        data_str = json.dumps(payload)
+        url = 'http://u.y.qq.com/cgi-bin/musicu.fcg?data=' + data_str
+        resp = requests.get(url, headers=self._headers, timeout=self._timeout)
+        js = resp.json()
+        CodeShouldBe0.check(js)
+        return js
 
     def get_mv(self, vid):
-        data = {
+        payload = {
             'getMvUrl': {
                 'module': "gosrf.Stream.MvUrlProxy",
                 'method': "GetMvUrls",
@@ -365,16 +257,11 @@ class API(object):
                 }
             }
         }
-
-        data_str = json.dumps(data)
-        url = 'https://u.y.qq.com/cgi-bin/musicu.fcg?data=' + data_str
-        resp = requests.get(url, headers=self._headers,
-                            timeout=self._timeout)
-        return resp.json()
+        js = self.rpc(payload)
+        return js['getMvUrl']['data'][vid]
 
     def get_radio_music(self):
-
-        data = {
+        payload = {
             'songlist': {
                 'module': "mb_track_radio_svr",
                 'method': "get_radio_track",
@@ -396,22 +283,132 @@ class API(object):
                 'cv': 0
             },
         }
-
-        data_str = json.dumps(data)
-
-        url = 'http://u.y.qq.com/cgi-bin/musicu.fcg?data=' + data_str
-
-        response = requests.get(url, headers=self._headers,
-                                timeout=self._timeout)
-
+        js = self.rpc(payload)
         res_json = []
-        for track in response.json()['songlist']['data']['tracks']:
+        for track in js['songlist']['data']['tracks']:
             track['songid'] = track.pop('id')
             track['songmid'] = track.pop('mid')
             track['songname'] = track.pop('name')
             res_json.append(track)
-
         return res_json
+
+    def get_song_detail(self, song_id):
+        song_id = int(song_id)
+        # 往 payload 添加字段，有可能还可以获取相似歌曲、歌单等
+        payload = {
+            'comm': {
+                'g_tk': 5381,
+                'uin': 0,
+                'format': 'json',
+                'inCharset': 'utf-8',
+                'outCharset': 'utf-8',
+                'notice': 0,
+                'platform': 'h5',
+                'needNewCode': 1
+            },
+            'detail': {
+                'module': 'music.pf_song_detail_svr',
+                'method': 'get_song_detail',
+                'param': {'song_id': song_id}
+            }
+        }
+        js = self.rpc(payload)
+        data_song = js['detail']['data']['track_info']
+        if data_song['id'] <= 0:
+            return None
+        return data_song
+
+    def get_song_url(self, song_mid, uin='0'):
+        songvkey = str(random.random()).replace("0.", "")
+        guid = "MS"
+        data = {
+            "req": {
+                "module": "CDN.SrfCdnDispatchServer",
+                "method": "GetCdnDispatch",
+                "param": {
+                    "guid": guid,
+                    "calltype": 0,
+                    "userip": ""
+                }
+            },
+            "req_0": {
+                "module": "vkey.GetVkeyServer",
+                "method": "CgiGetVkey",
+                "param": {
+                    'cid': 205361747,
+                    "guid": guid,
+                    "songmid": [song_mid],
+                    # "filename": [filename],
+                    "songtype": [1],
+                    "uin": uin,
+                    # "loginflag": 1,
+                    # "platform": "20"
+                }
+            },
+            "comm": {
+                "uin": uin,
+                "format": "json",
+                "ct": 24,
+                "cv": 0
+            }
+        }
+        data_str = json.dumps(data)
+        params = {
+            '-': 'getplaysongvkey' + str(songvkey),
+            'g_tk': 5381,
+            'loginUin': uin,
+            'hostUin': 0,
+            'format': 'json',
+            'inCharset': 'utf8',
+            'outCharset': 'utf8',
+            'notice': 0,
+            'platform': 'yqq.json',
+            'needNewCode': 0,
+        }
+        # 这里没有把 data=data_str 放在 params 中，因为 QQ 服务端不识别这种写法
+        # 另外测试发现：python(flask) 是可以识别这两种写法的
+        url = 'http://u.y.qq.com/cgi-bin/musicu.fcg?data=' + data_str
+        resp = requests.get(url, params=params, headers=self._headers)
+        js = resp.json()
+        midurlinfo = js['req_0']['data']['midurlinfo']
+        if midurlinfo:
+            purl = midurlinfo[0]['purl']
+            prefix = 'http://dl.stream.qqmusic.qq.com/'
+            prefix = 'http://mobileoc.music.tc.qq.com/'
+            valid_url = ''
+            # 有部分音乐网页版接口中没有，比如 晴天-周杰伦，
+            # 但是通过下面的黑魔法是可以获取的
+            quality_suffix = [
+                ('M500', 'mp3'),
+                # 经过个人(cosven)测试，M500 品质的成功率非常高
+                # 而下面三个从来不会成功，所以不尝试下面三个
+                # ('F000', 'flac'),
+                # ('A000', 'ape'),
+                # ('M800', 'mp3'),
+            ]
+            C400_filename = midurlinfo[0]['filename']
+            pure_filename = C400_filename[4:-3]
+            vkey = js['req']['data']['vkey']
+            for q, s in quality_suffix:
+                q_filename = q + pure_filename + s
+                url = '{}{}?vkey={}&guid=MS&uin={}&fromtag=8'\
+                    .format(prefix, q_filename, vkey, uin)
+                _resp = requests.head(url, headers=self._headers)
+                if _resp.status_code == 200:
+                    valid_url = url
+                    logger.info('song:{} quality:{} url is valid'
+                                .format(song_mid, q))
+                    break
+                logger.info('song:{} quality:{} url is invalid'
+                            .format(song_mid, q))
+            # 尝试拿到网页版接口的 url
+            if not valid_url and purl:
+                song_path = purl
+                valid_url = prefix + song_path
+                logger.info('song:{} quality:web url is valid'
+                            .format(song_mid))
+            return valid_url
+        return ''
 
 
 api = API()

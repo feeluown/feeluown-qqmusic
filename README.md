@@ -22,6 +22,7 @@ pip3 install fuo-qqmusic
 感谢 [@csy19960309](https://github.com/csy19960309)
 
 - 支持登陆功能，加载用户歌单
+- 支持歌词和 mv
 
 ### 0.2 (2019-11-27)
 - 使用 marshmallow>=3.0

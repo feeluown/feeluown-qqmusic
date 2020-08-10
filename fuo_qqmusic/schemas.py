@@ -52,6 +52,7 @@ class QQSongSchema(Schema):
                           data_key='singer')
     album = fields.Nested('_SongAlbumSchema', required=True)
     files = fields.Dict(data_key='file', missing={})
+    mv = fields.Dict(required=True)
 
     @post_load
     def create_model(self, data, **kwargs):
@@ -60,7 +61,8 @@ class QQSongSchema(Schema):
                            duration=data['duration'] * 1000,
                            title=data['title'],
                            artists=data.get('artists'),
-                           album=data.get('album'),)
+                           album=data.get('album'),
+                           mvid=data['mv'].get('vid', 0))
         return song
 
 

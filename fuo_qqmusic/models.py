@@ -1,14 +1,16 @@
 import logging
 
+from fuocore.media import Quality
 from fuocore.models import cached_field
-
 from fuocore.models import (
     BaseModel,
     SongModel,
+    LyricModel,
     PlaylistModel,
     AlbumModel,
     ArtistModel,
     SearchModel,
+    MvModel,
     UserModel,
     ModelStage,
 )
@@ -70,9 +72,58 @@ class QQBaseModel(BaseModel):
         raise NotImplementedError
 
 
+class QQMvModel(MvModel, QQBaseModel):
+    class Meta:
+        fields = ['q_url_mapping']
+        support_multi_quality = True
+
+    @classmethod
+    def get(cls, identifier):
+        data = cls._api.get_mv(identifier)
+        if not data:
+            return None
+        fhd = hd = sd = ld = None
+        for file in data['mp4']:
+            if not file['url']:
+                continue
+            file_type = file['filetype']
+            url = file['freeflow_url'][0]
+            if file_type == 40:
+                fhd = url
+            elif file_type == 30:
+                hd = url
+            elif file_type == 20:
+                sd = url
+            elif file_type == 10:
+                ld = url
+            elif file_type == 0:
+                pass
+            else:
+                logger.warning('There exists another quality:%s mv.', str(file_type))
+        q_url_mapping = dict(fhd=fhd, hd=hd, sd=sd, ld=ld)
+        return QQMvModel(identifier=identifier,
+                         q_url_mapping=q_url_mapping)
+
+    def list_quality(self):
+        return list(key for key, value in self.q_url_mapping.items()
+                    if value is not None)
+
+    def get_media(self, quality):
+        if isinstance(quality, Quality.Video):  # Quality.Video Enum Item
+            quality = quality.value
+        return self.q_url_mapping.get(quality)
+
+
+class QQLyricModel(LyricModel, QQBaseModel):
+    @classmethod
+    def get(cls, identifier):
+        content = cls._api.get_lyric_by_songmid(identifier)
+        return cls(identifier=identifier, content=content)
+
+
 class QQSongModel(SongModel, QQBaseModel):
     class Meta:
-        fields = ('mid',)
+        fields = ('mid', 'mvid')
         fields_no_get = ('mv', 'lyric')
 
     @classmethod
@@ -85,6 +136,16 @@ class QQSongModel(SongModel, QQBaseModel):
     def url(self):
         url = self._api.get_song_url(self.mid)
         return url
+
+    @cached_field()
+    def lyric(self):
+        return QQLyricModel.get(self.mid)
+
+    @cached_field(ttl=100)
+    def mv(self):
+        if self.mvid is None:
+            return None
+        return QQMvModel.get(self.mvid)
 
 
 class QQAlbumModel(AlbumModel, QQBaseModel):
