@@ -61,8 +61,8 @@ class API(object):
             self._uin = self.get_uin_from_cookies(cookies)
             self._guid = cookies.get('guid', 'MS')
         else:
-            self._cookies = {}
-            self._uin = 0
+            self._cookies = None
+            self._uin = '0'
             self._guid = 'MS'  # 暂时不知道 guid 有什么用
 
     def get_uin_from_cookies(self, cookies):
@@ -352,7 +352,7 @@ class API(object):
                     "songmid": [song_mid],
                     # "filename": [filename],
                     "songtype": [1],
-                    "uin": uin,
+                    "uin": str(uin),  # NOTE: must be a string
                     # "loginflag": 1,
                     # "platform": "20"
                 }
