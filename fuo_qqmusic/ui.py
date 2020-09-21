@@ -4,7 +4,7 @@ import os
 
 from fuocore import aio
 from feeluown.consts import DATA_DIR
-from feeluown.gui.widgets import CookiesLoginDialog
+from feeluown.gui.widgets.login import CookiesLoginDialog, InvalidCookies
 
 from .provider import provider
 from .excs import QQIOError
@@ -13,10 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 USER_INFO_FILE = DATA_DIR + '/qqmusic_user_info.json'
-
-
-class InvalidCookies(Exception):
-    pass
 
 
 class UiManager:
