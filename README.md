@@ -15,6 +15,20 @@ pip3 install fuo-qqmusic
 ### 登录
 在网页登录微信/QQ后（在任意网站），复制请求中的 cookies 至程序登录框
 
+Step by Step Guide:
+
+1.打开 qq 音乐网站
+
+2.登录
+
+3.在网页上鼠标右键，点击「检查元素」（英文叫 Inspec）。或者直接按 F12。就会看到类似这样的窗口
+![Inspec](https://user-images.githubusercontent.com/4962134/94247236-6cbc4b00-ff4f-11ea-94b2-c64ff5679ec0.png)
+
+4.点击「网络」（英文叫 Network）
+![Network](https://user-images.githubusercontent.com/4962134/94247417-ad1bc900-ff4f-11ea-87df-518c74f35513.png)
+
+5.拷贝 cookies，复制到 feeluown 的登录窗口
+
 ## changelog
 
 ### 0.3 (2020-08-10)
