@@ -13,7 +13,8 @@ pip3 install fuo-qqmusic
 ## 使用说明
 
 ### 登录
-在网页登录微信/QQ后（在任意网站），复制请求中的 cookies 至程序登录框
+在网页登录微信/QQ后（在任意网站），复制请求中的 cookies 至程序登录框，
+[操作示例](https://github.com/feeluown/feeluown-qqmusic/issues/6)。
 
 ## changelog
 
