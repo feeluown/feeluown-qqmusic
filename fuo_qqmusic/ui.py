@@ -29,13 +29,17 @@ class UiManager:
 
     def login_or_show(self):
         if provider._user is None:
-            dialog = LoginDialog()
-            dialog.login_succeed.connect(self.show_current_user)
-            dialog.show()
-            dialog.autologin()
+            self._dialog = LoginDialog('https://y.qq.com', ['qqmusic_key'])
+            self._dialog.login_succeed.connect(self.on_login_succeed)
+            self._dialog.show()
+            self._dialog.autologin()
         else:
             logger.info('already logged in')
             self.show_current_user()
+
+    def on_login_succeed(self):
+        self.show_current_user()
+        del self._dialog
 
     def show_current_user(self):
         """
