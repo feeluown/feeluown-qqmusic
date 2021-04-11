@@ -175,7 +175,7 @@ class QQSongModel(SongModel, QQBaseModel):
     def url(self):
         medias = list(self.q_media_mapping.values())
         if medias:
-            return [media.url for media in medias if media]
+            return medias[0].url
         return ''
 
     def list_quality(self):
