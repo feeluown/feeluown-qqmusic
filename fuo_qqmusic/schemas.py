@@ -12,6 +12,8 @@ class BaseSchema(Schema):
 
 Schema = BaseSchema
 
+from fuocore.media import Media, AudioMeta
+
 
 def pop_album_from_data(data):
     album_id = data.pop('albumid')
@@ -58,11 +60,24 @@ class QQSongSchema(Schema):
     def create_model(self, data, **kwargs):
         song = QQSongModel(identifier=data['identifier'],
                            mid=data['mid'],
+                           media_id=data['files']['media_mid'],
                            duration=data['duration'] * 1000,
                            title=data['title'],
                            artists=data.get('artists'),
                            album=data.get('album'),
                            mvid=data['mv'].get('vid', 0))
+        # 记录有哪些资源文件, 没有权限的用户依然获取不到
+        song.quality_suffix = []
+        if data['files'].get('size_flac'):
+            song.quality_suffix.append(('shq', 'F000', 800, 'flac'))
+        elif data['files'].get('size_ape'):
+            song.quality_suffix.append(('shq', 'A000', 800, 'ape'))
+        if data['files'].get('size_320') or data['files'].get('size_320mp3'):
+            song.quality_suffix.append(('hq', 'M800', 320, 'ape'))
+        if data['files'].get('size_aac') or data['files'].get('size_192aac'):
+            song.quality_suffix.append(('sq', 'C600', 192, 'm4a'))
+        if data['files'].get('size_128') or data['files'].get('size_128mp3'):
+            song.quality_suffix.append(('lq', 'M500', 128, 'mp3'))
         return song
 
 

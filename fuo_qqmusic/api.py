@@ -16,6 +16,15 @@ logger = logging.getLogger(__name__)
 api_base_url = 'http://c.y.qq.com'
 
 
+def _get_sign(data):
+    import os, execjs
+    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'sign.js'), 'r', encoding='utf-8') as f:
+        js_content = f.read()
+    js_exec = execjs.compile(js_content)
+    sign = js_exec.call('getSecuritySign', data)
+    return sign
+
+
 class CodeShouldBe0(QQIOError):
     def __init__(self, data):
         self._code = data['code']
@@ -59,11 +68,11 @@ class API(object):
         if cookies:
             self._cookies = cookies
             self._uin = self.get_uin_from_cookies(cookies)
-            self._guid = cookies.get('guid', 'MS')
+            self._guid = cookies.get('guid', str(int(random.random() * 1000000000)))
         else:
             self._cookies = None
             self._uin = '0'
-            self._guid = 'MS'  # 暂时不知道 guid 有什么用
+            self._guid = str(int(random.random() * 1000000000))  # 暂时不知道 guid 有什么用
 
     def get_uin_from_cookies(self, cookies):
         if 'wxuin' in cookies:
@@ -82,26 +91,51 @@ class API(object):
         return 'http://y.gtimg.cn/music/photo_new/T00{}R800x800M000{}.jpg' \
             .format(type_, mid)
 
-    def search(self, keyword, limit=20, page=1):
+    def search(self, keyword, type_=0, limit=20, page=1):
+        if type_ == 0:
+            key_ = 'song'
+        elif type_ == 8:
+            key_ = 'album'
+        elif type_ == 9:
+            key_ = 'artist'
+        else:
+            raise ValueError('invalid type_:%d', type_)
+
         path = '/soso/fcgi-bin/client_search_cp'
         url = api_base_url + path
         params = {
             # w,n,page are required parameters
             'w': keyword,
-            't': 0,  # t=0 代表歌曲，专辑:8, 歌手:9
+            't': type_,  # t=0 代表歌曲，专辑:8, 歌手:9, 歌词:7, mv:12
             'n': limit,
             'page': page,
 
             # positional parameters
             'cr': 1,  # copyright?
-
+            #
             'new_json': 1,
             'format': 'json',
             'platform': 'yqq.json'
         }
         resp = requests.get(url, params=params, timeout=self._timeout)
-        songs = resp.json()['data']['song']['list']
-        return songs
+        rv = resp.json()
+        return rv['data'][key_]['list']
+
+    def search_playlists(self, query, limit=20, page=1):
+        path = '/soso/fcgi-bin/client_music_search_songlist'
+        url = api_base_url + path
+        params = {
+            'query': query,
+            'page_no': page - 1,
+            'num_per_page': limit,
+            # 'format': 'jsonp',
+            # 'remoteplace': 'txt.yqq.top',
+            # 'searchid': 1,
+            # 'flag_qc': 0
+        }
+        resp = requests.get(url, params=params, timeout=self._timeout)
+        rv = resp.json()
+        return rv
 
     def artist_detail(self, artist_id, page=1, page_size=50):
         """获取歌手详情"""
@@ -125,7 +159,7 @@ class API(object):
         params = {
             'singerid': artist_id,
             'order': 'time',
-            'begin': page - 1,
+            'begin': page - 1,# TODO: 这里应该代表偏移量
             'num': page_size
         }
         response = requests.get(url, params=params)
@@ -441,6 +475,64 @@ class API(object):
                 logger.info(f'song:{song_mid} quality:web url is valid')
             return valid_urls
         return {}
+
+    def get_song_url_v2(self, song_mid, media_id, quality):
+        switcher = {
+            'F000': 'flac',
+            'A000': 'ape',
+            'M800': 'mp3',
+            'C600': 'm4a',
+            'M500': 'mp3'
+        }
+
+        uin = self._uin
+        guid = self._guid
+        filename = '{}{}.{}'.format(quality, media_id, switcher.get(quality))
+        data = {
+            "req_0": {
+                "module": "vkey.GetVkeyServer",
+                "method": "CgiGetVkey",
+                "param": {
+                    "filename": [filename],
+                    "guid": guid,
+                    "songmid": [song_mid],
+                    "songtype": [0],
+                    "uin": str(uin),  # NOTE: must be a string
+                    "loginflag": 1,
+                    "platform": "20"
+                }
+            },
+            "comm": {
+                "uin": str(uin),
+                "format": "json",
+                "ct": 19,
+                "cv": 0
+            }
+        }
+        data_str = json.dumps(data)
+
+        sign = _get_sign(data_str)
+        params = {
+            'sign': sign,
+            'g_tk': 5381,
+            'loginUin': '',
+            'hostUin': 0,
+            'format': 'json',
+            'inCharset': 'utf8',
+            'outCharset': 'utf-8¬ice=0',
+            'platform': 'yqq.json',
+            'needNewCode': 0,
+            'data': data_str
+        }
+        url = 'https://u.y.qq.com/cgi-bin/musicu.fcg'
+        # TODO: 似乎存在一种有效时间更长的cookies, https://github.com/PeterDing/chord
+        resp = requests.get(url, params=params,
+                            headers=self._headers, cookies=self._cookies)
+        js = resp.json()
+        midurlinfo = js['req_0'].get('data', {}).get('midurlinfo')
+        if midurlinfo and midurlinfo[0]['purl']:
+            return 'http://isure.stream.qqmusic.qq.com/{}'.format(midurlinfo[0]['purl'])
+        return ''
 
 
 api = API()
