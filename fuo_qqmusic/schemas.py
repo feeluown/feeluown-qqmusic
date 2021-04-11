@@ -70,15 +70,16 @@ class QQSongSchema(Schema):
         # 记录有哪些资源文件, 没有权限的用户依然获取不到
         song.quality_suffix = []
         files = data['files']
-        if 'size_flac' in files:
+
+        if files.get('size_flac'):  # has key and value is not empty
             song.quality_suffix.append(('shq', 'F000', 800, 'flac'))
-        elif 'size_ape' in files:
+        elif files.get('size_ape'):
             song.quality_suffix.append(('shq', 'A000', 800, 'ape'))
-        if 'size_320' in files or 'size_320mp3' in files:
+        if files.get('size_320') or files.get('size_320mp3'):
             song.quality_suffix.append(('hq', 'M800', 320, 'ape'))
-        if 'size_aac' in files or 'size_192aac' in files:
+        if files.get('size_aac' ) or files.get('size_192aac'):
             song.quality_suffix.append(('sq', 'C600', 192, 'm4a'))
-        if 'size_128' in files or 'size_128mp3' in files:
+        if files.get('size_128') or files.get('size_128mp3'):
             song.quality_suffix.append(('lq', 'M500', 128, 'mp3'))
         return song
 
