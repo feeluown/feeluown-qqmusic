@@ -13,8 +13,8 @@ setup(
         'fuo_qqmusic',
     ],
     package_data={
-        '': []
-        },
+        '': ['assets/*.svg',]
+    },
     url='https://github.com/feeluown/feeluown-qqmusic',
     keywords=['feeluown', 'plugin', 'qqmusic'],
     classifiers=[
@@ -31,7 +31,7 @@ setup(
     ],
     extras_require={
         'jsengine': ['pyexecjs'],
-    }
+    },
     entry_points={
         'fuo.plugins_v1': [
             'qqmusic = fuo_qqmusic',
