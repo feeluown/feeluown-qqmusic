@@ -17,8 +17,10 @@ api_base_url = 'http://c.y.qq.com'
 
 
 def _get_sign(data):
-    import os, execjs
-    with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'sign.js'), 'r', encoding='utf-8') as f:
+    import os
+    import execjs
+    with open(os.path.join(os.path.dirname(__file__), 'sign.js'),
+              encoding='utf-8') as f:
         js_content = f.read()
     js_exec = execjs.compile(js_content)
     sign = js_exec.call('getSecuritySign', data)

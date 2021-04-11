@@ -29,6 +29,9 @@ setup(
         'requests',
         'marshmallow>=3.0'
     ],
+    extras_require={
+        'jsengine': ['pyexecjs'],
+    }
     entry_points={
         'fuo.plugins_v1': [
             'qqmusic = fuo_qqmusic',
