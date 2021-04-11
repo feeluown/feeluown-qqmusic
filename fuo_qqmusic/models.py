@@ -1,4 +1,5 @@
 import logging
+import os
 
 from fuocore.media import Quality, Media
 from fuocore.models import cached_field
@@ -148,25 +149,35 @@ class QQSongModel(SongModel, QQBaseModel):
     @cached_field(ttl=1000)
     def q_media_mapping(self):
         """fetch media info and save it in q_media_mapping"""
-        q_urls_mapping = self._api.get_song_url(self.mid)
-        q_bitrate_mapping = {'shq': 1000,
-                             'hq': 800,
-                             'sq': 500,
-                             'lq': 64}
-        q_media_mapping = {}
-        for quality, url in q_urls_mapping.items():
-            bitrate = q_bitrate_mapping[quality]
-            format = url.split('?')[0].split('.')[-1]
-            q_media_mapping[quality] = Media(url, bitrate=bitrate, format=format)
+        use_v2 = False
+        try:
+            import execjs
+        except ImportError:
+            pass
+        else:
+            # 当 execjs 库安装的时候，默认使用 v2 接口，
+            # 用户可以通过设置环境变量来主动关闭（可以在 fuorc 文件中设置）。
+            if 'FUO_QQMUSIC_JSENGINE_DISABLE' not in os.environ:
+                use_v2 = True
 
-        for idx, (q, t, b, s) in enumerate(self.quality_suffix):
-            url = self._api.get_song_url_v2(self.mid, self.media_id, t)
-            if url:
-                q_media_mapping[q] = Media(url, bitrate=b, format=s)
-                # 一般来说，高品质有权限 低品质也会有权限，减少网络请求
-                for i in range(idx + 1, len(self.quality_suffix)):
-                    q_media_mapping[self.quality_suffix[i][0]] = None
-                break
+        q_media_mapping = {}
+        if use_v2 is True:
+            # 注：self.quality_suffix 这里可能会触发一次网络请求
+            for idx, (q, t, b, s) in enumerate(self.quality_suffix):
+                url = self._api.get_song_url_v2(self.mid, self.media_id, t)
+                if url:
+                    q_media_mapping[q] = Media(url, bitrate=b, format=s)
+        else:
+            q_urls_mapping = self._api.get_song_url(self.mid)
+            q_bitrate_mapping = {'shq': 1000,
+                                 'hq': 800,
+                                 'sq': 500,
+                                 'lq': 64}
+            q_media_mapping = {}
+            for quality, url in q_urls_mapping.items():
+                bitrate = q_bitrate_mapping[quality]
+                format = url.split('?')[0].split('.')[-1]
+                q_media_mapping[quality] = Media(url, bitrate=bitrate, format=format)
 
         self.q_media_mapping = q_media_mapping
         return q_media_mapping
@@ -179,20 +190,9 @@ class QQSongModel(SongModel, QQBaseModel):
         return ''
 
     def list_quality(self):
-        # if self.q_media_mapping is None:
-        #     self._refresh_url()
         return list(self.q_media_mapping.keys())
 
     def get_media(self, quality):
-        media = self.q_media_mapping.get(quality)
-        if media is None:
-            for (q, t, b, s) in self.quality_suffix:
-                if quality == q:
-                    url = self._api.get_song_url_v2(self.mid, self.media_id, t)
-                    if url:
-                        self.q_media_mapping[quality] = Media(url, bitrate=b, format=s)
-                    else:
-                        self.q_media_mapping[quality] = ''
         return self.q_media_mapping.get(quality)
 
 
