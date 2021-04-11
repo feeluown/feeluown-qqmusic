@@ -13,6 +13,7 @@ from fuocore.models import (
     MvModel,
     UserModel,
     ModelStage,
+    SearchType,
 )
 
 from fuocore.reader import SequentialReader, wrap as reader_wrap
@@ -124,7 +125,7 @@ class QQLyricModel(LyricModel, QQBaseModel):
 class QQSongModel(SongModel, QQBaseModel):
 
     class Meta:
-        fields = ('mid', 'mvid', 'q_media_mapping')
+        fields = ('mid', 'media_id', 'mvid', 'q_media_mapping', 'quality_suffix')
         fields_no_get = ('mv', 'lyric', 'q_media_mapping')
         support_multi_quality = True
 
@@ -155,7 +156,18 @@ class QQSongModel(SongModel, QQBaseModel):
         q_media_mapping = {}
         for quality, url in q_urls_mapping.items():
             bitrate = q_bitrate_mapping[quality]
-            q_media_mapping[quality] = Media(url, bitrate=bitrate)
+            format = url.split('?')[0].split('.')[-1]
+            q_media_mapping[quality] = Media(url, bitrate=bitrate, format=format)
+
+        for idx, (q, t, b, s) in enumerate(self.quality_suffix):
+            url = self._api.get_song_url_v2(self.mid, self.media_id, t)
+            if url:
+                q_media_mapping[q] = Media(url, bitrate=b, format=s)
+                # 一般来说，高品质有权限 低品质也会有权限，减少网络请求
+                for i in range(idx + 1, len(self.quality_suffix)):
+                    q_media_mapping[self.quality_suffix[i][0]] = None
+                break
+
         self.q_media_mapping = q_media_mapping
         return q_media_mapping
 
@@ -168,10 +180,20 @@ class QQSongModel(SongModel, QQBaseModel):
 
     def list_quality(self):
         if self.q_media_mapping is None:
+            # FIXME: 之前的代码, 按道理需要增加链接自动刷新的机制
             self._refresh_url()
         return list(self.q_media_mapping.keys())
 
     def get_media(self, quality):
+        media = self.q_media_mapping.get(quality)
+        if media is None:
+            for (q, t, b, s) in self.quality_suffix:
+                if quality == q:
+                    url = self._api.get_song_url_v2(self.mid, self.media_id, t)
+                    if url:
+                        self.q_media_mapping[quality] = Media(url, bitrate=b, format=s)
+                    else:
+                        self.q_media_mapping[quality] = ''
         return self.q_media_mapping.get(quality)
 
 
@@ -187,6 +209,38 @@ class QQAlbumModel(AlbumModel, QQBaseModel):
         album = _deserialize(data_album, QQAlbumSchema)
         album.cover = cls._api.get_cover(album.mid, 2)
         return album
+
+    # def _more_info(self):
+    #     """this function will get more info such as genre, date, track & disc (just for tag completion)"""
+    #     data = self._api.album_detail(self.identifier)
+    #     if data is None:
+    #         return {}
+    #
+    #     # 有时候显示的歌手名有问题，需要专门请求(如fuo://qqmusic/songs/217490728包含了好几个歌手)
+    #     if '/' in self.artists[0].name:
+    #         self.artists[0].name = self._api.artist_detail(self.artists[0].identifier)['singer_name']
+    #     import re
+    #     fil = re.compile(u'[^0-9a-zA-Z/&]+', re.UNICODE)
+    #     tag_info = {
+    #         'albumartist': self.artists_name,
+    #         'date': data['getAlbumInfo']['Fpublic_time'] + 'T00:00:00',
+    #         'genre': (fil.sub(' ', data['genre'])).strip()}
+    #
+    #     try:
+    #         songs_identifier = [int(song['id']) for song in data['getSongInfo']]
+    #         songs_disc = [song['index_cd'] + 1 for song in data['getSongInfo']]
+    #         disc_counts = {x: songs_disc.count(x) for x in range(1, max(songs_disc) + 1)}
+    #         track_bias = [0]
+    #         for i in range(1, len(disc_counts)):
+    #             track_bias.append(track_bias[-1] + disc_counts[i])
+    #         tag_info['discs'] = dict(zip(songs_identifier, [str(disc) + '/' + str(songs_disc[-1])
+    #                                                         for disc in songs_disc]))
+    #         tag_info['tracks'] = dict(zip(songs_identifier, [
+    #             str(song['index_album'] - track_bias[song['index_cd']]) + '/' + str(disc_counts[song['index_cd'] + 1])
+    #             for song in data['getSongInfo']]))
+    #     except Exception as e:
+    #         logger.error(e)
+    #     return tag_info
 
 
 class QQArtistModel(ArtistModel, QQBaseModel):
@@ -255,12 +309,26 @@ class QQUserModel(UserModel, QQBaseModel):
 
 
 def search(keyword, **kwargs):
+    # TODO: support to search artist/album/playlist
     data_songs = provider.api.search(keyword)
     songs = []
     for data_song in data_songs:
         song = _deserialize(data_song, QQSongSchema)
         songs.append(song)
     return QQSearchModel(songs=songs)
+    # type_ = SearchType.parse(kwargs['type_'])
+    # if type_ == SearchType.pl:
+    #     data = provider.api.search_playlist(keyword)
+    # else:
+    #     type_type_map = {
+    #         SearchType.so: 0,
+    #         SearchType.al: 8,
+    #         SearchType.ar: 9,
+    #     }
+    #     data = provider.api.search(keyword, type_=type_type_map[type_])
+    # result = _deserialize(data, QQSearchSchema)
+    # result.q = keyword
+    # return result
 
 
 base_model = QQBaseModel()
