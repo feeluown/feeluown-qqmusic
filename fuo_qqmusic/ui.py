@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from pathlib import Path
 
 from fuocore import aio
 from feeluown.consts import DATA_DIR
@@ -23,6 +24,8 @@ class UiManager:
             text='QQ 音乐',
             symbol='♫ ',
             desc='点击登录 QQ 音乐',
+            colorful_svg=str(Path(__file__).resolve().parent /
+                             'assets' / 'icon.svg'),
         )
         self._pvd_item.clicked.connect(self.login_or_show)
         app.pvd_uimgr.add_item(self._pvd_item)
