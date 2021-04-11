@@ -175,13 +175,12 @@ class QQSongModel(SongModel, QQBaseModel):
     def url(self):
         medias = list(self.q_media_mapping.values())
         if medias:
-            return medias[0].url
+            return [media.url for media in medias if media]
         return ''
 
     def list_quality(self):
-        if self.q_media_mapping is None:
-            # FIXME: 之前的代码, 按道理需要增加链接自动刷新的机制
-            self._refresh_url()
+        # if self.q_media_mapping is None:
+        #     self._refresh_url()
         return list(self.q_media_mapping.keys())
 
     def get_media(self, quality):

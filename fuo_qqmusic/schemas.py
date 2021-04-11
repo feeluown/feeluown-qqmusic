@@ -78,7 +78,6 @@ class QQSongSchema(Schema):
             song.quality_suffix.append(('sq', 'C600', 192, 'm4a'))
         if data['files'].get('size_128') or data['files'].get('size_128mp3'):
             song.quality_suffix.append(('lq', 'M500', 128, 'mp3'))
-        song.q_media_mapping = {}
         return song
 
 
