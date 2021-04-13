@@ -204,9 +204,14 @@ class QQSongModel(SongModel, QQBaseModel):
                 if quality == q:
                     url = self._api.get_song_url_v2(self.mid, self.media_id, t)
                     if url:
-                        self.q_media_mapping[quality] = Media(url, bitrate=b, format=s)
+                        media = Media(url, bitrate=b, format=s)
+                        self.q_media_mapping[quality] = media
                     else:
-                        self.q_media_mapping[quality] = ''
+                        media = None
+                        self.q_media_mapping[quality] = None
+                    break
+            else:
+                media = None
         return media
 
 
