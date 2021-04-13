@@ -14,7 +14,6 @@ from fuocore.models import (
     MvModel,
     UserModel,
     ModelStage,
-    SearchType,
 )
 
 from fuocore.reader import SequentialReader, wrap as reader_wrap
@@ -152,7 +151,7 @@ class QQSongModel(SongModel, QQBaseModel):
         """fetch media info and save it in q_media_mapping"""
         use_v2 = False
         try:
-            import execjs
+            import execjs  # noqa
         except ImportError:
             pass
         else:
@@ -223,38 +222,6 @@ class QQAlbumModel(AlbumModel, QQBaseModel):
         album = _deserialize(data_album, QQAlbumSchema)
         album.cover = cls._api.get_cover(album.mid, 2)
         return album
-
-    # def _more_info(self):
-    #     """this function will get more info such as genre, date, track & disc (just for tag completion)"""
-    #     data = self._api.album_detail(self.identifier)
-    #     if data is None:
-    #         return {}
-    #
-    #     # 有时候显示的歌手名有问题，需要专门请求(如fuo://qqmusic/songs/217490728包含了好几个歌手)
-    #     if '/' in self.artists[0].name:
-    #         self.artists[0].name = self._api.artist_detail(self.artists[0].identifier)['singer_name']
-    #     import re
-    #     fil = re.compile(u'[^0-9a-zA-Z/&]+', re.UNICODE)
-    #     tag_info = {
-    #         'albumartist': self.artists_name,
-    #         'date': data['getAlbumInfo']['Fpublic_time'] + 'T00:00:00',
-    #         'genre': (fil.sub(' ', data['genre'])).strip()}
-    #
-    #     try:
-    #         songs_identifier = [int(song['id']) for song in data['getSongInfo']]
-    #         songs_disc = [song['index_cd'] + 1 for song in data['getSongInfo']]
-    #         disc_counts = {x: songs_disc.count(x) for x in range(1, max(songs_disc) + 1)}
-    #         track_bias = [0]
-    #         for i in range(1, len(disc_counts)):
-    #             track_bias.append(track_bias[-1] + disc_counts[i])
-    #         tag_info['discs'] = dict(zip(songs_identifier, [str(disc) + '/' + str(songs_disc[-1])
-    #                                                         for disc in songs_disc]))
-    #         tag_info['tracks'] = dict(zip(songs_identifier, [
-    #             str(song['index_album'] - track_bias[song['index_cd']]) + '/' + str(disc_counts[song['index_cd'] + 1])
-    #             for song in data['getSongInfo']]))
-    #     except Exception as e:
-    #         logger.error(e)
-    #     return tag_info
 
 
 class QQArtistModel(ArtistModel, QQBaseModel):

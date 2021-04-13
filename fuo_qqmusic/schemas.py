@@ -1,7 +1,7 @@
-
+import logging
 
 from marshmallow import Schema, fields, post_load, EXCLUDE
-import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -11,8 +11,6 @@ class BaseSchema(Schema):
 
 
 Schema = BaseSchema
-
-from fuocore.media import Media, AudioMeta
 
 
 def pop_album_from_data(data):
@@ -77,7 +75,7 @@ class QQSongSchema(Schema):
             song.quality_suffix.append(('shq', 'A000', 800, 'ape'))
         if files.get('size_320') or files.get('size_320mp3'):
             song.quality_suffix.append(('hq', 'M800', 320, 'ape'))
-        if files.get('size_aac' ) or files.get('size_192aac'):
+        if files.get('size_aac') or files.get('size_192aac'):
             song.quality_suffix.append(('sq', 'C600', 192, 'm4a'))
         if files.get('size_128') or files.get('size_128mp3'):
             song.quality_suffix.append(('lq', 'M500', 128, 'mp3'))
