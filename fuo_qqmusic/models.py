@@ -22,6 +22,7 @@ from fuocore.reader import SequentialReader, wrap as reader_wrap
 from .provider import provider
 
 logger = logging.getLogger(__name__)
+UNFETCHED_MEDIA = object()
 
 
 def _deserialize(data, schema_cls, gotten=True):
@@ -167,6 +168,11 @@ class QQSongModel(SongModel, QQBaseModel):
                 url = self._api.get_song_url_v2(self.mid, self.media_id, t)
                 if url:
                     q_media_mapping[q] = Media(url, bitrate=b, format=s)
+                    # 一般来说，高品质有权限 低品质也会有权限，减少网络请求。
+                    # 这里把值设置为 UNFETCHED_MEDIA，作为一个标记。
+                    for i in range(idx + 1, len(self.quality_suffix)):
+                        q_media_mapping[self.quality_suffix[i][0]] = UNFETCHED_MEDIA
+                    break
         else:
             q_urls_mapping = self._api.get_song_url(self.mid)
             q_bitrate_mapping = {'shq': 1000,
@@ -193,7 +199,16 @@ class QQSongModel(SongModel, QQBaseModel):
         return list(self.q_media_mapping.keys())
 
     def get_media(self, quality):
-        return self.q_media_mapping.get(quality)
+        media = self.q_media_mapping.get(quality)
+        if media is UNFETCHED_MEDIA:
+            for (q, t, b, s) in self.quality_suffix:
+                if quality == q:
+                    url = self._api.get_song_url_v2(self.mid, self.media_id, t)
+                    if url:
+                        self.q_media_mapping[quality] = Media(url, bitrate=b, format=s)
+                    else:
+                        self.q_media_mapping[quality] = ''
+        return media
 
 
 class QQAlbumModel(AlbumModel, QQBaseModel):
