@@ -86,6 +86,16 @@ class API(object):
             self._uin = '0'
             self._guid = str(int(random.random() * 1000000000))  # 暂时不知道 guid 有什么用
 
+    def get_token_from_cookies(self):
+        cookies = self._cookies
+        if not cookies:
+            return None
+        # 不同客户端cookies返回的字段类型各有不同, 这里做一个折衷
+        string = cookies.get('qqmusic_key') or cookies['p_skey'] or \
+                 cookies['skey'] or cookies['p_lskey'] or cookies['lskey']
+
+        return djb2(string)
+
     def get_uin_from_cookies(self, cookies):
         if 'wxuin' in cookies:
             # a sample wxuin: o1152921504803324670
