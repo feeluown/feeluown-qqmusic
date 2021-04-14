@@ -15,15 +15,25 @@ logger = logging.getLogger(__name__)
 
 api_base_url = 'http://c.y.qq.com'
 
+def djb2(string):
+    h = 5381
+    ''' Hash a word using the djb2 algorithm with the specified base. '''
+    for c in string:
+        h = ((h << 5) + h + ord(c)) & 0xffffffff
+    return str(2147483647 & h)
 
+# reference from: https://blog.csdn.net/zq1391345114/article/details/113815906
 def _get_sign(data):
-    import os
-    import execjs
-    with open(os.path.join(os.path.dirname(__file__), 'sign.js'),
-              encoding='utf-8') as f:
-        js_content = f.read()
-    js_exec = execjs.compile(js_content)
-    sign = js_exec.call('getSecuritySign', data)
+    import math, hashlib
+    # zza+一段随机的小写字符串，由小写字母和数字组成，长度为10-16位+CJBPACrRuNy7和data取md5。
+    st = 'abcdefghijklmnopqrstuvwxyz0123456789'
+    count = (math.floor(random.randint(10, 16)))
+    sign = 'zza'
+    for i in range(count):
+        sign += st[math.floor(random.randint(0, 35))]
+    s = 'CJBPACrRuNy7' + data
+    s_md5 = hashlib.md5(s.encode('utf-8')).hexdigest()
+    sign += s_md5
     return sign
 
 
