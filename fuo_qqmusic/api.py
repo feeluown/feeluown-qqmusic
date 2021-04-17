@@ -3,28 +3,31 @@
 
 import base64
 import re
+import hashlib
 import logging
+import math
 import json
 import random
 import time
-import requests
 
+import requests
 from .excs import QQIOError
 
 logger = logging.getLogger(__name__)
 
 api_base_url = 'http://c.y.qq.com'
 
+
 def djb2(string):
-    h = 5381
     ''' Hash a word using the djb2 algorithm with the specified base. '''
+    h = 5381
     for c in string:
         h = ((h << 5) + h + ord(c)) & 0xffffffff
     return str(2147483647 & h)
 
+
 # reference from: https://blog.csdn.net/zq1391345114/article/details/113815906
 def _get_sign(data):
-    import math, hashlib
     # zza+一段随机的小写字符串，由小写字母和数字组成，长度为10-16位+CJBPACrRuNy7和data取md5。
     st = 'abcdefghijklmnopqrstuvwxyz0123456789'
     count = (math.floor(random.randint(10, 16)))
@@ -85,16 +88,6 @@ class API(object):
             self._cookies = None
             self._uin = '0'
             self._guid = str(int(random.random() * 1000000000))  # 暂时不知道 guid 有什么用
-
-    def get_token_from_cookies(self):
-        cookies = self._cookies
-        if not cookies:
-            return None
-        # 不同客户端cookies返回的字段类型各有不同, 这里做一个折衷
-        string = cookies.get('qqmusic_key') or cookies['p_skey'] or \
-                 cookies['skey'] or cookies['p_lskey'] or cookies['lskey']
-
-        return djb2(string)
 
     def get_uin_from_cookies(self, cookies):
         if 'wxuin' in cookies:
