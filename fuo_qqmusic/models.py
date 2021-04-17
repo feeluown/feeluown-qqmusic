@@ -1,5 +1,4 @@
 import logging
-import os
 
 from fuocore.media import Quality, Media
 from fuocore.models import cached_field
@@ -149,19 +148,8 @@ class QQSongModel(SongModel, QQBaseModel):
     @cached_field(ttl=1000)
     def q_media_mapping(self):
         """fetch media info and save it in q_media_mapping"""
-        use_v2 = False
-        try:
-            import execjs  # noqa
-        except ImportError:
-            pass
-        else:
-            # 当 execjs 库安装的时候，默认使用 v2 接口，
-            # 用户可以通过设置环境变量来主动关闭（可以在 fuorc 文件中设置）。
-            if 'FUO_QQMUSIC_JSENGINE_DISABLE' not in os.environ:
-                use_v2 = True
-
         q_media_mapping = {}
-        if use_v2 is True:
+        if True:
             # 注：self.quality_suffix 这里可能会触发一次网络请求
             for idx, (q, t, b, s) in enumerate(self.quality_suffix):
                 url = self._api.get_song_url_v2(self.mid, self.media_id, t)
