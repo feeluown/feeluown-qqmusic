@@ -18,6 +18,13 @@ pip3 install fuo-qqmusic
 
 ## changelog
 
+### 0.3.2 (2021-04-23)
+
+感谢 [@cyliuu](https://github.com/cyliuu)
+
+- 提供更准确的音乐的比特率
+- 绿钻用户使用合适的 cookie 可以获取到高品质音乐
+
 ### 0.3 (2020-08-10)
 
 感谢 [@csy19960309](https://github.com/csy19960309)
