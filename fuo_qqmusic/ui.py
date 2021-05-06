@@ -44,6 +44,15 @@ class UiManager:
         self.show_current_user()
         del self._dialog
 
+    def show_fav_songs(self):
+        self._app.ui.songs_table_container.show_songs(provider._user.fav_songs)
+
+    def show_fav_albums(self):
+        self._app.ui.songs_table_container.show_albums_coll(provider._user.fav_albums)
+
+    def show_fav_artists(self):
+        self._app.ui.songs_table_container.show_artists_coll(provider._user.fav_artists)
+
     def show_current_user(self):
         """
         please ensure user is logged in
@@ -51,8 +60,23 @@ class UiManager:
         user = provider._user
         self._app.ui.left_panel.my_music_con.hide()
         self._app.ui.left_panel.playlists_con.show()
+        self._app.ui.left_panel.my_music_con.show()
+
+        mymusic_fav_item = self._app.mymusic_uimgr.create_item('♥ 喜欢的歌曲')
+        mymusic_fav_item.clicked.connect(self.show_fav_songs)
+        mymusic_albums_item = self._app.mymusic_uimgr.create_item('♥ 收藏的专辑')
+        mymusic_albums_item.clicked.connect(self.show_fav_albums)
+        mymusic_artists_item = self._app.mymusic_uimgr.create_item('♥ 关注的歌手')
+        mymusic_artists_item.clicked.connect(self.show_fav_artists)
+        self._app.mymusic_uimgr.clear()
+        # self._app.mymusic_uimgr.add_item(mymusic_rec_item)
+        self._app.mymusic_uimgr.add_item(mymusic_fav_item)
+        self._app.mymusic_uimgr.add_item(mymusic_albums_item)
+        self._app.mymusic_uimgr.add_item(mymusic_artists_item)
+
         self._app.pl_uimgr.clear()
         self._app.pl_uimgr.add(user.playlists)
+        self._app.pl_uimgr.add(user.fav_playlists, is_fav=True)
         self._pvd_item.text = f'QQ 音乐 - {user.name}'
 
 

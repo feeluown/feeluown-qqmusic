@@ -98,6 +98,16 @@ class API(object):
             uin = cookies.get('uin')
         return uin
 
+    def get_token_from_cookies(self):
+        cookies = self._cookies
+        if not cookies:
+            return None
+        # 不同客户端cookies返回的字段类型各有不同, 这里做一个折衷
+        string = cookies.get('qqmusic_key') or cookies['p_skey'] or \
+                 cookies['skey'] or cookies['p_lskey'] or cookies['lskey']
+
+        return djb2(string)
+
     def get_cover(self, mid, type_):
         """获取专辑、歌手封面
 
@@ -112,7 +122,7 @@ class API(object):
         elif type_ == 8:
             key_ = 'album'
         elif type_ == 9:
-            key_ = 'artist'
+            key_ = 'singer'
         else:
             raise ValueError('invalid type_:%d', type_)
 
@@ -143,14 +153,45 @@ class API(object):
             'query': query,
             'page_no': page - 1,
             'num_per_page': limit,
-            # 'format': 'jsonp',
-            # 'remoteplace': 'txt.yqq.top',
-            # 'searchid': 1,
-            # 'flag_qc': 0
+            'format': 'json',
+            'remoteplace': 'txt.yqq.top',
+            'searchid': 1,
+            'flag_qc': 0,
+            'inCharset': 'GB2312',
+            'outCharset': 'utf-8',
         }
-        resp = requests.get(url, params=params, timeout=self._timeout)
+
+        resp = requests.get(url, params=params, headers=self._headers,
+                            timeout=self._timeout)
         rv = resp.json()
-        return rv
+        return rv['data']['list']
+
+    def song_detail(self, song_id):
+        uin = self._uin
+        song_id = int(song_id)
+        # 往 payload 添加字段，有可能还可以获取相似歌曲、歌单等
+        payload = {
+            'comm': {
+                'g_tk': 5381,
+                'uin': uin,
+                'format': 'json',
+                'inCharset': 'utf-8',
+                'outCharset': 'utf-8',
+                'notice': 0,
+                'platform': 'h5',
+                'needNewCode': 1
+            },
+            'detail': {
+                'module': 'music.pf_song_detail_svr',
+                'method': 'get_song_detail',
+                'param': {'song_id': song_id}
+            }
+        }
+        js = self.rpc(payload)
+        data_song = js['detail']['data']['track_info']
+        if data_song['id'] <= 0:
+            return None
+        return data_song
 
     def artist_detail(self, artist_id, page=1, page_size=50):
         """获取歌手详情"""
@@ -191,7 +232,29 @@ class API(object):
         resp = requests.get(url, params=params)
         return resp.json()['data']
 
-    def get_user_info(self, uid):
+    def playlist_detail(self, pid, offset=0, limit=50):
+        # FIXME: current the limit is fixed to 50
+        url = api_base_url + '/qzone/fcg-bin/fcg_ucc_getcdinfo_byids_cp.fcg'
+        params = {
+            'type': '1',
+            'utf8': '1',
+            'disstid': pid,
+            'format': 'json',
+
+            # 需要这个字段来获取file等信息
+            'new_format': '1',
+
+            'song_begin': offset,
+            'song_num': limit,
+        }
+        resp = requests.get(url, params=params, headers=self._headers,
+                            cookies=self._cookies, timeout=self._timeout)
+        js = resp.json()
+        if js['code'] != 0:
+            raise CodeShouldBe0(js)
+        return js['cdlist'][0]
+
+    def user_detail(self, uid):
         """
         this API can be called only when user has logged in
         """
@@ -209,36 +272,38 @@ class API(object):
             raise CodeShouldBe0(js)
         return js['data']
 
-    def get_playlist(self, pid):
-        url = api_base_url + '/qzone/fcg-bin/fcg_ucc_getcdinfo_byids_cp.fcg'
-        params = {
-            'type': 1,
-            'utf8': 1,
-            'disstid': pid,
-            'format': 'json',
+    def user_favorite_artists(self, uid, mid, page=1, page_size=30):
+        # FIXME: page/page_size is just a guess
+        url = 'https://u.y.qq.com/cgi-bin/musics.fcg'
+        data = {
+            'req_0': {
+                'module': 'music.concern.RelationList',
+                'method': 'GetFollowSingerList',
+                'param': {
+                    'From': page - 1,
+                    'Size': page_size,
+                    'HostUin': mid
+                }},
+            'comm': {
+                'g_tk': self.get_token_from_cookies(),
+                'uin': uid,
+                'format': 'json',
+            }
         }
-        resp = requests.get(url, params=params, headers=self._headers,
+        data_str = json.dumps(data)
+
+        params = {
+            '_': int(round(time.time() * 1000)),
+            'sign': _get_sign(data_str),
+            'data': data_str
+        }
+
+        resp = requests.get(url ,params = params, headers=self._headers,
                             cookies=self._cookies, timeout=self._timeout)
         js = resp.json()
-        if js['code'] != 0:
-            raise CodeShouldBe0(js)
-        return js['cdlist'][0]
+        return js['req_0']['data']['List']
 
-    def get_recommend_songs_pid(self):
-        """get the playlist id of recommended songs"""
-        url = 'https://c.y.qq.com/node/musicmac/v6/index.html'
-        resp = requests.get(url, headers=self._headers,
-                            cookies=self._cookies, timeout=self._timeout)
-        # find this line, and the data-rid field value is the playlist id
-        # <a data-type="10014" data-rid="5187073319">今日私享</a>
-        text = resp.text
-        p = re.compile(r'data-rid="(\d+)">今日私享<')
-        m = p.search(text)
-        if m is None:
-            return None
-        return m.group(1)
-
-    def get_user_favorite_albums(self, uid, start=0, end=100):
+    def user_favorite_albums(self, uid, start=0, end=100):
         url = api_base_url + '/fav/fcgi-bin/fcg_get_profile_order_asset.fcg'
         params = {
             'ct': 20,  # 不知道此字段什么含义
@@ -254,21 +319,41 @@ class API(object):
         js = resp.json()
         if js['code'] != 0:
             raise CodeShouldBe0(js)
-        return js['data']
+        return js['data']['albumlist']
 
-    def user_playlists(self, uid):
-        url = 'http://c.y.qq.com/rsc/fcgi-bin/fcg_get_profile_homepage.fcg'
+    def user_favorite_playlists(self, uid, mid, start=0, end=100):
+        url = api_base_url + '/fav/fcgi-bin/fcg_get_profile_order_asset.fcg'
 
         params = {
-            'cid': 205360838,  # 意义不明
-            'reqfrom': 1,
-            'userid': uid
+            'loginUin': uid,
+            'userid': mid,
+            'cid': 205360956,
+            'sin': start,
+            'ein': end,
+            'reqtype': 3,
+            'ct': 20, # 没有该字段 返回中文字符是乱码
         }
-        response = requests.get(url, params=params, headers=self._headers,
-                                timeout=self._timeout)
-        play_list = response.json()['data']['mydiss']
 
-        return play_list
+        resp = requests.get(url, params=params, headers=self._headers,
+                                timeout=self._timeout)
+        js = resp.json()
+        if js['code'] != 0:
+            raise CodeShouldBe0(js)
+        return js['data']['cdlist']
+
+    def get_recommend_songs_pid(self):
+        """get the playlist id of recommended songs"""
+        url = 'https://c.y.qq.com/node/musicmac/v6/index.html'
+        resp = requests.get(url, headers=self._headers,
+                            cookies=self._cookies, timeout=self._timeout)
+        # find this line, and the data-rid field value is the playlist id
+        # <a data-type="10014" data-rid="5187073319">今日私享</a>
+        text = resp.text
+        p = re.compile(r'data-rid="(\d+)">今日私享<')
+        m = p.search(text)
+        if m is None:
+            return None
+        return m.group(1)
 
     def get_lyric_by_songmid(self, songmid):
         url = api_base_url + '/lyric/fcgi-bin/fcg_query_lyric_new.fcg'
@@ -349,33 +434,6 @@ class API(object):
             track['songname'] = track.pop('name')
             res_json.append(track)
         return res_json
-
-    def get_song_detail(self, song_id):
-        uin = self._uin
-        song_id = int(song_id)
-        # 往 payload 添加字段，有可能还可以获取相似歌曲、歌单等
-        payload = {
-            'comm': {
-                'g_tk': 5381,
-                'uin': uin,
-                'format': 'json',
-                'inCharset': 'utf-8',
-                'outCharset': 'utf-8',
-                'notice': 0,
-                'platform': 'h5',
-                'needNewCode': 1
-            },
-            'detail': {
-                'module': 'music.pf_song_detail_svr',
-                'method': 'get_song_detail',
-                'param': {'song_id': song_id}
-            }
-        }
-        js = self.rpc(payload)
-        data_song = js['detail']['data']['track_info']
-        if data_song['id'] <= 0:
-            return None
-        return data_song
 
     def get_song_url(self, song_mid):
         uin = self._uin
