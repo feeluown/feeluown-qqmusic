@@ -213,6 +213,7 @@ class QQAlbumModel(AlbumModel, QQBaseModel):
         data_album = cls._api.album_detail(identifier)
         if data_album is None:
             return None
+        # FIXME: 目前专辑内的歌曲信息中 其MV信息为空, 且之后无法更新该信息
         album = _deserialize(data_album, QQAlbumSchema)
         album.cover = cls._api.get_cover(album.mid, 2)
         return album
