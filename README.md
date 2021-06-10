@@ -18,6 +18,13 @@ pip3 install fuo-qqmusic
 
 ## changelog
 
+### 0.3.3 (2021-06-10)
+
+感谢 [@cyliuu](https://github.com/cyliuu)
+
+- 支持展示收藏的歌曲、专辑和歌手
+- 支持获取相似歌曲
+
 ### 0.3.2 (2021-04-23)
 
 感谢 [@cyliuu](https://github.com/cyliuu)
