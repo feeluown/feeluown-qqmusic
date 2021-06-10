@@ -89,6 +89,7 @@ class _ArtistSongSchema(Schema):
     def create_model(self, data, **kwargs):
         return data['value']
 
+
 class _BriefArtistSchema(Schema):
     identifier = fields.Int(data_key='singerID', required=True)
     mid = fields.Str(data_key='singerMID', required=True)
@@ -107,6 +108,7 @@ class _BriefAlbumSchema(Schema):
     @post_load
     def create_model(self, data, **kwargs):
         return QQAlbumModel(**data)
+
 
 class _BriefPlaylistSchema(Schema):
     identifier = fields.Int(data_key='dissid', required=True)

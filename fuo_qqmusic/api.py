@@ -108,7 +108,7 @@ class API(object):
             return None
         # 不同客户端cookies返回的字段类型各有不同, 这里做一个折衷
         string = cookies.get('qqmusic_key') or cookies['p_skey'] or \
-                 cookies['skey'] or cookies['p_lskey'] or cookies['lskey']
+            cookies['skey'] or cookies['p_lskey'] or cookies['lskey']
 
         return djb2(string)
 
@@ -296,7 +296,7 @@ class API(object):
             'data': data_str
         }
 
-        resp = requests.get(url ,params = params, headers=self._headers,
+        resp = requests.get(url, params=params, headers=self._headers,
                             cookies=self._cookies, timeout=self._timeout)
         js = resp.json()
         return js['req_0']['data']['List']
@@ -329,11 +329,11 @@ class API(object):
             'sin': start,
             'ein': end,
             'reqtype': 3,
-            'ct': 20, # 没有该字段 返回中文字符是乱码
+            'ct': 20,  # 没有该字段 返回中文字符是乱码
         }
 
         resp = requests.get(url, params=params, headers=self._headers,
-                                timeout=self._timeout)
+                            timeout=self._timeout)
         js = resp.json()
         if js['code'] != 0:
             raise CodeShouldBe0(js)

@@ -306,7 +306,8 @@ def search(keyword, **kwargs):
     type_ = SearchType.parse(kwargs['type_'])
     if type_ == SearchType.pl:
         data = provider.api.search_playlists(keyword)
-        playlists = [_deserialize(playlist, _BriefPlaylistSchema, False) for playlist in data]
+        playlists = [_deserialize(playlist, _BriefPlaylistSchema, False)
+                     for playlist in data]
         return QQSearchModel(playlists=playlists)
     else:
         type_type_map = {
