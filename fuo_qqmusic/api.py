@@ -105,11 +105,11 @@ class API(object):
     def get_token_from_cookies(self):
         cookies = self._cookies
         if not cookies:
-            return None
+            return 5381  # 不知道这个数字有木有特殊含义
+
         # 不同客户端cookies返回的字段类型各有不同, 这里做一个折衷
         string = cookies.get('qqmusic_key') or cookies['p_skey'] or \
             cookies['skey'] or cookies['p_lskey'] or cookies['lskey']
-
         return djb2(string)
 
     def get_cover(self, mid, type_):
@@ -194,6 +194,21 @@ class API(object):
         if data_song['id'] <= 0:
             return None
         return data_song
+
+    def song_similar(self, song_id):
+        payload = {
+            "simsongs": {
+                "module": "rcmusic.similarSongRadioServer",
+                "method": "get_simsongs",
+                "param": {
+                    "songid": song_id,
+                }
+            }
+        }
+        payload['comm'] = self.get_common_params()
+        js = self.rpc(payload)
+        data_songs = js['simsongs']['data']['songInfoList']
+        return data_songs
 
     def artist_detail(self, artist_id, page=1, page_size=50):
         """获取歌手详情"""
@@ -379,7 +394,7 @@ class API(object):
         return {
             'loginUin': self._uin,
             'hostUin': 0,
-            'g_tk': 5381,
+            'g_tk': self.get_token_from_cookies(),
             'inCharset': 'utf8',
             'outCharset': 'utf-8',
             'notice': 0,
