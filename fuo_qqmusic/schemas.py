@@ -89,8 +89,17 @@ class _ArtistSongSchema(Schema):
     def create_model(self, data, **kwargs):
         return data['value']
 
+class _BriefArtistSchema(Schema):
+    identifier = fields.Int(data_key='singerID', required=True)
+    mid = fields.Str(data_key='singerMID', required=True)
+    name = fields.Str(data_key='singerName', required=True)
 
-class _ArtistAlbumSchema(Schema):
+    @post_load
+    def create_model(self, data, **kwargs):
+        return QQArtistModel(**data)
+
+
+class _BriefAlbumSchema(Schema):
     identifier = fields.Int(data_key='albumID', required=True)
     mid = fields.Str(data_key='albumMID', required=True)
     name = fields.Str(data_key='albumName', required=True)
@@ -98,6 +107,15 @@ class _ArtistAlbumSchema(Schema):
     @post_load
     def create_model(self, data, **kwargs):
         return QQAlbumModel(**data)
+
+class _BriefPlaylistSchema(Schema):
+    identifier = fields.Int(data_key='dissid', required=True)
+    name = fields.Str(data_key='dissname', required=True)
+    cover = fields.Str(data_key='imgurl', required=True)
+
+    @post_load
+    def create_model(self, data, **kwargs):
+        return QQPlaylistModel(**data)
 
 
 class QQArtistSchema(Schema):
@@ -149,38 +167,39 @@ class QQAlbumSchema(Schema):
         return album
 
 
-class _PlaylistSongSchema(Schema):
-    """SongSchema for song in a playlist"""
-    identifier = fields.Int(data_key='songid', required=True)
-    mid = fields.Str(data_key='songmid', required=True)
-    duration = fields.Float(data_key='interval', required=True)
-    title = fields.Str(data_key='songname', required=True)
-    artists = fields.List(fields.Nested('_SongArtistSchema'),
-                          data_key='singer')
-    albumid = fields.Int(data_key='albumid', required=True)
-    albummid = fields.Str(data_key='albummid', required=True)
-    albumname = fields.Str(data_key='albumname', required=True)
-
-    @post_load
-    def create_model(self, data, **kwargs):
-        data['duration'] = data['duration'] * 1000
-        album = pop_album_from_data(data)
-        song = QQSongModel(album=album, **data)
-        return song
-
-
 class QQPlaylistSchema(Schema):
-    identifier = fields.Int(required=True, data_key='disstid')
+    identifier = fields.Int(required=True, data_key='dissid')
     name = fields.Str(required=True, data_key='dissname')
     cover = fields.Url(required=True, data_key='logo')
     # songs field maybe null, though it can't be null in model
-    songs = fields.List(fields.Nested(_PlaylistSongSchema),
+    songs = fields.List(fields.Nested(QQSongSchema),
                         data_key='songlist',
                         allow_none=True)
 
     @post_load
     def create_model(self, data, **kwargs):
         return QQPlaylistModel(**data)
+
+
+class _UserArtistSchema(Schema):
+    other_infos = fields.Dict(data_key='OtherInfo', required=True)
+    mid = fields.Str(data_key='MID', required=True)
+    name = fields.Str(data_key='Name', required=True)
+
+    @post_load
+    def create_model(self, data, **kwargs):
+        data['identifier'] = data['other_infos']['SingerID']
+        return QQArtistModel(**data)
+
+
+class _UserAlbumSchema(Schema):
+    identifier = fields.Int(data_key='albumid', required=True)
+    mid = fields.Str(data_key='albummid', required=True)
+    name = fields.Str(data_key='albumname', required=True)
+
+    @post_load
+    def create_model(self, data, **kwargs):
+        return QQAlbumModel(**data)
 
 
 class _UserPlaylistSchema(Schema):
@@ -206,7 +225,9 @@ class QQUserSchema(Schema):
             playlist = schema.load(each)
             playlists.append(playlist)
         return QQUserModel(identifier=creator['uin'],
+                           mid=creator['encrypt_uin'],
                            name=creator['nick'],
+                           fav_pid=creator['fav_pid'],
                            playlists=playlists)
 
 

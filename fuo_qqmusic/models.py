@@ -13,6 +13,7 @@ from fuocore.models import (
     MvModel,
     UserModel,
     ModelStage,
+    SearchType,
 )
 
 from fuocore.reader import SequentialReader, wrap as reader_wrap
@@ -50,7 +51,7 @@ def create_g(func, identifier, schema):
                     # FIXME: 由于 feeluown 展示歌手的 album 列表时，
                     # 会依次同步的去获取 cover，所以我们这里必须先把 cover 初始化好，
                     # 否则 feeluown 界面会卡住
-                    if schema == _ArtistAlbumSchema:
+                    if schema == _BriefAlbumSchema:
                         obj.cover = provider.api.get_cover(obj.mid, 2)
                     yield obj
                 page += 1
@@ -131,7 +132,7 @@ class QQSongModel(SongModel, QQBaseModel):
 
     @classmethod
     def get(cls, identifier):
-        data = cls._api.get_song_detail(identifier)
+        data = cls._api.song_detail(identifier)
         song = _deserialize(data, QQSongSchema)
         return song
 
@@ -212,6 +213,7 @@ class QQAlbumModel(AlbumModel, QQBaseModel):
         data_album = cls._api.album_detail(identifier)
         if data_album is None:
             return None
+        # FIXME: 目前专辑内的歌曲信息中 其MV信息为空, 且之后无法更新该信息
         album = _deserialize(data_album, QQAlbumSchema)
         album.cover = cls._api.get_cover(album.mid, 2)
         return album
@@ -237,7 +239,7 @@ class QQArtistModel(ArtistModel, QQBaseModel):
     def create_albums_g(self):
         return create_g(self._api.artist_albums,
                         self.identifier,
-                        _ArtistAlbumSchema)
+                        _BriefAlbumSchema)
 
 
 class QQPlaylistModel(PlaylistModel, QQBaseModel):
@@ -246,7 +248,7 @@ class QQPlaylistModel(PlaylistModel, QQBaseModel):
 
     @classmethod
     def get(cls, identifier):
-        data = cls._api.get_playlist(identifier)
+        data = cls._api.playlist_detail(identifier, limit=1000)
         return _deserialize(data, QQPlaylistSchema)
 
     def create_songs_g(self):
@@ -260,20 +262,38 @@ class QQSearchModel(SearchModel, QQBaseModel):
 
 class QQUserModel(UserModel, QQBaseModel):
     class Meta:
-        fields = ('cookies',)
+        fields = ('cookies', 'fav_pid')
         fields_no_get = ('cookies', 'rec_songs', 'rec_playlists',
-                         'fav_artists', 'fav_albums', )
+                         'fav_songs', 'fav_artists', 'fav_albums', )
 
     @classmethod
     def get(cls, identifier):
-        data = cls._api.get_user_info(identifier)
+        data = cls._api.user_detail(identifier)
+        data['creator']['fav_pid'] = data['mymusic'][0]['id']
         return _deserialize(data, QQUserSchema)
+
+    @cached_field(ttl=5)  # ttl should be 0
+    def fav_songs(self):
+        # TODO: fetch more if total count > 100
+        playlist = QQPlaylistModel.get(self.fav_pid)
+        return playlist.songs
+
+    @cached_field(ttl=5)  # ttl should be 0
+    def fav_artists(self):
+        # TODO: fetch more if total count > 100
+        artists = self._api.user_favorite_artists(self.identifier, self.mid)
+        return [_deserialize(artist, _UserArtistSchema, False) for artist in artists]
 
     @cached_field(ttl=5)  # ttl should be 0
     def fav_albums(self):
         # TODO: fetch more if total count > 100
         albums = self._api.user_favorite_albums(self.identifier)
-        return [_deserialize(album, QQAlbumSchema) for album in albums]
+        return [_deserialize(album, _UserAlbumSchema, False) for album in albums]
+
+    @cached_field(ttl=5)  # ttl should be 0
+    def fav_playlists(self):
+        playlists = self._api.user_favorite_playlists(self.identifier, self.mid)
+        return [_deserialize(playlist, QQPlaylistSchema, False) for playlist in playlists]
 
     @cached_field(ttl=5)  # ttl should be 0
     def rec_songs(self):
@@ -283,26 +303,27 @@ class QQUserModel(UserModel, QQBaseModel):
 
 
 def search(keyword, **kwargs):
-    # TODO: support to search artist/album/playlist
-    data_songs = provider.api.search(keyword)
-    songs = []
-    for data_song in data_songs:
-        song = _deserialize(data_song, QQSongSchema)
-        songs.append(song)
-    return QQSearchModel(songs=songs)
-    # type_ = SearchType.parse(kwargs['type_'])
-    # if type_ == SearchType.pl:
-    #     data = provider.api.search_playlist(keyword)
-    # else:
-    #     type_type_map = {
-    #         SearchType.so: 0,
-    #         SearchType.al: 8,
-    #         SearchType.ar: 9,
-    #     }
-    #     data = provider.api.search(keyword, type_=type_type_map[type_])
-    # result = _deserialize(data, QQSearchSchema)
-    # result.q = keyword
-    # return result
+    type_ = SearchType.parse(kwargs['type_'])
+    if type_ == SearchType.pl:
+        data = provider.api.search_playlists(keyword)
+        playlists = [_deserialize(playlist, _BriefPlaylistSchema, False) for playlist in data]
+        return QQSearchModel(playlists=playlists)
+    else:
+        type_type_map = {
+            SearchType.so: 0,
+            SearchType.al: 8,
+            SearchType.ar: 9,
+        }
+        data = provider.api.search(keyword, type_=type_type_map[type_])
+        if type_ == SearchType.so:
+            songs = [_deserialize(song, QQSongSchema) for song in data]
+            return QQSearchModel(songs=songs)
+        elif type_ == SearchType.al:
+            albums = [_deserialize(album, _BriefAlbumSchema, False) for album in data]
+            return QQSearchModel(albums=albums)
+        else:
+            artists = [_deserialize(artist, _BriefArtistSchema, False) for artist in data]
+            return QQSearchModel(artists=artists)
 
 
 base_model = QQBaseModel()
@@ -314,5 +335,9 @@ from .schemas import (  # noqa
     QQArtistSchema,
     QQAlbumSchema,
     _ArtistSongSchema,
-    _ArtistAlbumSchema,
+    _BriefAlbumSchema,
+    _BriefArtistSchema,
+    _BriefPlaylistSchema,
+    _UserAlbumSchema,
+    _UserArtistSchema,
 )
