@@ -355,18 +355,112 @@ class API(object):
         return js['data']['cdlist']
 
     def get_recommend_songs_pid(self):
-        """get the playlist id of recommended songs"""
-        url = 'https://c.y.qq.com/node/musicmac/v6/index.html'
-        resp = requests.get(url, headers=self._headers,
+        url = 'https://u.y.qq.com/cgi-bin/musics.fcg'
+
+        data = {
+            'req_0': {
+                'module': 'recommend.RecommendFeedServer',
+                'method': 'get_recommend_feed',
+                'param': {
+                    'direction': 0,
+                    'page': 1,
+                    'v_cache': [],
+                    'v_uniq': [],
+                    's_num': 0
+                }},
+            'comm': {
+                'g_tk': self.get_token_from_cookies(),
+                'uin': self.get_uin_from_cookies(self._cookies),
+                'format': 'json',
+                'ct': 6,
+                'cv': 70500,
+                'platform': 'wk_v17'
+            }
+        }
+        data_str = json.dumps(data)
+        params = {
+            '_': int(round(time.time() * 1000)),
+            'sign': _get_sign(data_str),
+            'data': data_str
+        }
+
+        resp = requests.get(url, params=params, headers=self._headers,
                             cookies=self._cookies, timeout=self._timeout)
-        # find this line, and the data-rid field value is the playlist id
-        # <a data-type="10014" data-rid="5187073319">今日私享</a>
-        text = resp.text
-        p = re.compile(r'data-rid="(\d+)">今日私享<')
-        m = p.search(text)
-        if m is None:
-            return None
-        return m.group(1)
+        js = resp.json()
+
+        disstid = js['req_0']['data']['v_shelf'][0]['v_niche'][0]['v_card'][1]['id']
+        return disstid
+
+    def recommend_playlists(self):
+        url = 'https://u.y.qq.com/cgi-bin/musicu.fcg'
+
+        data = {
+            'recomPlaylist': {
+                'module': "playlist.HotRecommendServer",
+                'method': "get_hot_recommend",
+                'param': {
+                    'cmd': 2,
+                    'async': 1
+                }
+            },
+        }
+        data_str = json.dumps(data)
+
+        params = {
+            'g_tk': self.get_token_from_cookies(),
+            'loginUin': '0',
+            'hostUin': '0',
+            'format': 'json',
+            'inCharset': 'utf8',
+            'outCharset': 'utf-8',
+            'notice': '0',
+            'platform': 'yqq',
+            'needNewCode': '0',
+            'data': data_str,
+        }
+
+        response = requests.get(url, params=params, headers=self._headers,
+                                timeout=self._timeout)
+        playlist = response.json()['recomPlaylist']
+
+        return playlist['data']['v_hot']
+
+    def get_recommend_playlists_ids(self, index=0):
+        url = 'https://u.y.qq.com/cgi-bin/musics.fcg'
+
+        data = {
+            'req_0': {
+                'module': 'recommend.RecommendFeedServer',
+                'method': 'get_recommend_feed',
+                'param': {
+                    'direction': 0,
+                    'page': 1,
+                    'v_cache': [],
+                    'v_uniq': [],
+                    's_num': 0
+                }},
+            'comm': {
+                'g_tk': self.get_token_from_cookies(),
+                'uin': self.get_uin_from_cookies(self._cookies),
+                'format': 'json',
+                'ct': 6,
+                'cv': 70500,
+                'platform': 'wk_v17'
+            }
+        }
+        data_str = json.dumps(data)
+        params = {
+            '_': int(round(time.time() * 1000)),
+            'sign': _get_sign(data_str),
+            'data': data_str
+        }
+
+        resp = requests.get(url, params=params, headers=self._headers,
+                            cookies=self._cookies, timeout=self._timeout)
+        js = resp.json()
+
+        ids = [card['id'] for card in js['req_0']['data']['v_shelf'][index]['v_niche'][0]['v_card']]
+        return ids
 
     def get_lyric_by_songmid(self, songmid):
         url = api_base_url + '/lyric/fcgi-bin/fcg_query_lyric_new.fcg'
