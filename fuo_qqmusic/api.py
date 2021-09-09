@@ -108,8 +108,8 @@ class API(object):
             return 5381  # 不知道这个数字有木有特殊含义
 
         # 不同客户端cookies返回的字段类型各有不同, 这里做一个折衷
-        string = cookies.get('qqmusic_key') or cookies['p_skey'] or \
-            cookies['skey'] or cookies['p_lskey'] or cookies['lskey']
+        string = cookies.get('qqmusic_key') or cookies.get('p_skey') or \
+            cookies.get('skey') or cookies.get('p_lskey') or cookies.get('lskey')
         return djb2(string)
 
     def get_cover(self, mid, type_):

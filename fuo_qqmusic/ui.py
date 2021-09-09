@@ -40,7 +40,8 @@ class UiManager:
 
     def login_or_show(self):
         if provider._user is None:
-            self._dialog = LoginDialog('https://y.qq.com', ['qqmusic_key'])
+            # self._dialog = LoginDialog('https://y.qq.com', ['qqmusic_key'])
+            self._dialog = LoginDialog('https://xui.ptlogin2.qq.com/cgi-bin/xlogin?appid=1006102&daid=384&low_login=1&pt_no_auth=1&s_url=https://y.qq.com/vip/daren_recruit/apply.html&style=40', ['skey'])
             self._dialog.login_succeed.connect(self.on_login_succeed)
             self._dialog.show()
             self._dialog.autologin()
