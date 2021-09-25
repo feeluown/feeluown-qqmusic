@@ -14,6 +14,7 @@ class QQProvider(AbstractProvider, ProviderV2):
         name = 'QQ 音乐'
         flags = {
             ModelType.song: PF.similar,
+            ModelType.none: PF.current_user,
         }
 
     def __init__(self):
@@ -27,6 +28,9 @@ class QQProvider(AbstractProvider, ProviderV2):
     @property
     def name(self):
         return 'QQ 音乐'
+
+    def has_current_user(self):
+        return self._user is not None
 
     def song_list_similar(self, song):
         data_songs = self.api.song_similar(int(song.identifier))

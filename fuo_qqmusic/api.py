@@ -108,8 +108,9 @@ class API(object):
             return 5381  # 不知道这个数字有木有特殊含义
 
         # 不同客户端cookies返回的字段类型各有不同, 这里做一个折衷
-        string = cookies.get('qqmusic_key') or cookies['p_skey'] or \
-            cookies['skey'] or cookies['p_lskey'] or cookies['lskey']
+        string = cookies.get('qqmusic_key') or cookies.get('p_skey') or \
+            cookies.get('skey') or cookies.get('p_lskey') or \
+            cookies.get('lskey') or ''
         return djb2(string)
 
     def get_cover(self, mid, type_):
@@ -205,7 +206,6 @@ class API(object):
                 }
             }
         }
-        payload['comm'] = self.get_common_params()
         js = self.rpc(payload)
         data_songs = js['simsongs']['data']['songInfoList']
         return data_songs
@@ -355,18 +355,56 @@ class API(object):
         return js['data']['cdlist']
 
     def get_recommend_songs_pid(self):
-        """get the playlist id of recommended songs"""
-        url = 'https://c.y.qq.com/node/musicmac/v6/index.html'
-        resp = requests.get(url, headers=self._headers,
-                            cookies=self._cookies, timeout=self._timeout)
-        # find this line, and the data-rid field value is the playlist id
-        # <a data-type="10014" data-rid="5187073319">今日私享</a>
-        text = resp.text
-        p = re.compile(r'data-rid="(\d+)">今日私享<')
-        m = p.search(text)
-        if m is None:
-            return None
-        return m.group(1)
+        data = {
+            'req_0': {
+                'module': 'recommend.RecommendFeedServer',
+                'method': 'get_recommend_feed',
+                'param': {
+                    'direction': 0,
+                    'page': 1,
+                    'v_cache': [],
+                    'v_uniq': [],
+                    's_num': 0
+                }
+            },
+        }
+        js = self.rpc(data)
+        disstid = js['req_0']['data']['v_shelf'][0]['v_niche'][0]['v_card'][1]['id']
+        return disstid
+
+    def recommend_playlists(self):
+        data = {
+            'recomPlaylist': {
+                'module': "playlist.HotRecommendServer",
+                'method': "get_hot_recommend",
+                'param': {
+                    'cmd': 2,
+                    'async': 1
+                }
+            },
+        }
+        js = self.rpc(data)
+        playlist = js['recomPlaylist']
+        return playlist['data']['v_hot']
+
+    def get_recommend_playlists_ids(self, index=0):
+        data = {
+            'req_0': {
+                'module': 'recommend.RecommendFeedServer',
+                'method': 'get_recommend_feed',
+                'param': {
+                    'direction': 0,
+                    'page': 1,
+                    'v_cache': [],
+                    'v_uniq': [],
+                    's_num': 0
+                }
+            },
+        }
+        js = self.rpc(data)
+        ids = [card['id']
+               for card in js['req_0']['data']['v_shelf'][index]['v_niche'][0]['v_card']]
+        return ids
 
     def get_lyric_by_songmid(self, songmid):
         url = api_base_url + '/lyric/fcgi-bin/fcg_query_lyric_new.fcg'
@@ -383,9 +421,17 @@ class API(object):
         return base64.b64decode(lyric).decode()
 
     def rpc(self, payload):
+        if 'comm' not in payload:
+            payload['comm'] = self.get_common_params()
         data_str = json.dumps(payload)
-        url = 'http://u.y.qq.com/cgi-bin/musicu.fcg?data=' + data_str
-        resp = requests.get(url, headers=self._headers, timeout=self._timeout)
+        params = {
+            '_': int(round(time.time() * 1000)),
+            'sign': _get_sign(data_str),
+            'data': data_str,
+        }
+        url = 'http://u.y.qq.com/cgi-bin/musicu.fcg'
+        resp = requests.get(url, params=params, headers=self._headers,
+                            timeout=self._timeout)
         js = resp.json()
         CodeShouldBe0.check(js)
         return js

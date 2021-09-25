@@ -301,6 +301,17 @@ class QQUserModel(UserModel, QQBaseModel):
         playlist = QQPlaylistModel.get(pid)
         return playlist.songs
 
+    @cached_field(ttl=5)  # ttl should be 0
+    def rec_playlists(self):
+        pids = self._api.get_recommend_playlists_ids()
+        # rec_playlists = [QQPlaylistModel.get(pid) for pid in pids]
+        playlists = self._api.recommend_playlists()
+        for pl in playlists:
+            pl['dissid'] = pl['content_id']
+            pl['dissname'] = pl['title']
+            pl['logo'] = pl['cover']
+        return [_deserialize(playlist, QQPlaylistSchema, False) for playlist in playlists]
+
 
 def search(keyword, **kwargs):
     type_ = SearchType.parse(kwargs['type_'])
