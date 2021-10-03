@@ -217,7 +217,7 @@ class API(object):
         params = {
             'singerid': artist_id,
             'order': 'listen',
-            'begin': page - 1,
+            'begin': (page - 1) * page_size,
             'num': page_size,
 
             # 有 newsong 字段时，服务端会返回含有 file 字段的字典
@@ -232,7 +232,7 @@ class API(object):
         params = {
             'singerid': artist_id,
             'order': 'time',
-            'begin': page - 1,  # TODO: 这里应该代表偏移量
+            'begin': (page - 1) * page_size,  # TODO: 这里应该代表偏移量
             'num': page_size
         }
         response = requests.get(url, params=params)

@@ -47,7 +47,7 @@ class QQSongSchema(Schema):
     identifier = fields.Int(data_key='id', required=True)
     mid = fields.Str(data_key='mid', required=True)
     duration = fields.Float(data_key='interval', required=True)
-    title = fields.Str(data_key='name', required=True)
+    title = fields.Str(data_key='title', required=True)
     artists = fields.List(fields.Nested('_SongArtistSchema'),
                           data_key='singer')
     album = fields.Nested('_SongAlbumSchema', required=True)
