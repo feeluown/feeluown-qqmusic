@@ -3,7 +3,7 @@ import logging
 import os
 from pathlib import Path
 
-from fuocore import aio
+from feeluown.utils import aio
 from feeluown.consts import DATA_DIR
 from feeluown.gui.widgets.login import CookiesLoginDialog, InvalidCookies
 

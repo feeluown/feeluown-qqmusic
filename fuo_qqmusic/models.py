@@ -1,8 +1,8 @@
 import logging
 
-from fuocore.media import Quality, Media
-from fuocore.models import cached_field
-from fuocore.models import (
+from feeluown.media import Quality, Media
+from feeluown.models import (
+    cached_field,
     BaseModel,
     SongModel,
     LyricModel,
@@ -15,8 +15,7 @@ from fuocore.models import (
     ModelStage,
     SearchType,
 )
-
-from fuocore.reader import SequentialReader, wrap as reader_wrap
+from feeluown.utils.reader import SequentialReader, wrap as reader_wrap
 
 from .provider import provider
 
