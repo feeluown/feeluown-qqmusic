@@ -212,27 +212,57 @@ class API(object):
 
     def artist_detail(self, artist_id, page=1, page_size=50):
         """获取歌手详情"""
-        path = '/v8/fcg-bin/fcg_v8_singer_track_cp.fcg'
-        url = api_base_url + path
-        params = {
-            'singerid': artist_id,
-            'order': 'listen',
-            'begin': page - 1,
-            'num': page_size,
-
-            # 有 newsong 字段时，服务端会返回含有 file 字段的字典
-            'newsong': 1
+        # path = '/v8/fcg-bin/fcg_v8_singer_track_cp.fcg'
+        # url = api_base_url + path
+        # params = {
+        #     'singerid': artist_id,
+        #     'order': 'listen',
+        #     'begin': (page - 1) * page_size,
+        #     'num': page_size,
+        #
+        #     # 有 newsong 字段时，服务端会返回含有 file 字段的字典
+        #     'newsong': 1
+        # }
+        # resp = requests.get(url, params=params, timeout=self._timeout)
+        # rv = resp.json()
+        # return rv['data']
+        url = 'https://u.y.qq.com/cgi-bin/musics.fcg'
+        data = {
+            'req_0': {
+                'module': 'music.musichallSong.SongListInter',
+                'method': 'GetSingerSongList',
+                'param': {
+                    'singerid': artist_id,
+                    'begin': (page - 1) * page_size,
+                    'num': page_size,
+                    # 有 newsong 字段时，服务端会返回含有 file 字段的字典
+                    'newsong': 1
+                }},
+            'comm': {
+                'g_tk': self.get_token_from_cookies(),
+                'uin': self._uin,
+                'format': 'json',
+            }
         }
-        resp = requests.get(url, params=params, timeout=self._timeout)
-        rv = resp.json()
-        return rv['data']
+        data_str = json.dumps(data)
+
+        params = {
+            '_': int(round(time.time() * 1000)),
+            'sign': _get_sign(data_str),
+            'data': data_str
+        }
+
+        resp = requests.get(url, params=params, headers=self._headers,
+                            cookies=self._cookies, timeout=self._timeout)
+        js = resp.json()
+        return js['req_0']['data']
 
     def artist_albums(self, artist_id, page=1, page_size=20):
         url = api_base_url + '/v8/fcg-bin/fcg_v8_singer_album.fcg'
         params = {
             'singerid': artist_id,
             'order': 'time',
-            'begin': page - 1,  # TODO: 这里应该代表偏移量
+            'begin': (page - 1) * page_size,  # TODO: 这里应该代表偏移量
             'num': page_size
         }
         response = requests.get(url, params=params)
