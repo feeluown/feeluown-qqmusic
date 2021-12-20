@@ -225,13 +225,14 @@ class QQArtistModel(ArtistModel, QQBaseModel):
 
     @classmethod
     def get(cls, identifier):
-        data_artist = cls._api.artist_detail(identifier)
+        data_mid = cls._api.artist_songs(identifier, 1, 0)['singerMid']
+        data_artist = cls._api.artist_detail(data_mid)
         artist = _deserialize(data_artist, QQArtistSchema)
         artist.cover = cls._api.get_cover(artist.mid, 1)
         return artist
 
     def create_songs_g(self):
-        return create_g(self._api.artist_detail,
+        return create_g(self._api.artist_songs,
                         self.identifier,
                         _ArtistSongSchema)
 
