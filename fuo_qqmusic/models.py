@@ -35,7 +35,7 @@ def _deserialize(data, schema_cls, gotten=True):
 
 def create_g(func, identifier, schema):
     data = func(identifier, page=1)
-    total = int(data['total'])
+    total = int(data['totalNum'] if schema == _ArtistSongSchema else data['total'])
 
     def g():
         nonlocal data
@@ -43,8 +43,8 @@ def create_g(func, identifier, schema):
             yield from ()
         else:
             page = 1
-            while data['list']:
-                obj_data_list = data['list']
+            while data['songList'] if schema == _ArtistSongSchema else data['list']:
+                obj_data_list = data['songList'] if schema == _ArtistSongSchema else data['list']
                 for obj_data in obj_data_list:
                     obj = _deserialize(obj_data, schema, gotten=False)
                     # FIXME: 由于 feeluown 展示歌手的 album 列表时，
@@ -225,13 +225,14 @@ class QQArtistModel(ArtistModel, QQBaseModel):
 
     @classmethod
     def get(cls, identifier):
-        data_artist = cls._api.artist_detail(identifier)
+        data_mid = cls._api.artist_songs(identifier, 1, 0)['singerMid']
+        data_artist = cls._api.artist_detail(data_mid)
         artist = _deserialize(data_artist, QQArtistSchema)
         artist.cover = cls._api.get_cover(artist.mid, 1)
         return artist
 
     def create_songs_g(self):
-        return create_g(self._api.artist_detail,
+        return create_g(self._api.artist_songs,
                         self.identifier,
                         _ArtistSongSchema)
 
