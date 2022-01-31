@@ -18,6 +18,12 @@ pip3 install fuo-qqmusic
 
 ## changelog
 
+### 0.3.4 (2022-01-31)
+
+感谢 [@cyliuu](https://github.com/cyliuu)
+
+- 修复若干问题 
+
 ### 0.3.3 (2021-06-10)
 
 感谢 [@cyliuu](https://github.com/cyliuu)
