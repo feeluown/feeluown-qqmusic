@@ -83,10 +83,15 @@ class UiManager:
         # self._app.mymusic_uimgr.add_item(mymusic_rec_item)
         self._app.mymusic_uimgr.add_item(mymusic_fav_item)
 
+        async def _show_playlists():
+            playlists = await aio.run_fn(lambda: user.playlists)
+            fav_playlists = await aio.run_fn(lambda: user.fav_playlists)
+            self._app.pl_uimgr.add(playlists)
+            self._app.pl_uimgr.add(fav_playlists, is_fav=True)
+            self._pvd_item.text = f'QQ 音乐 - {user.name}'
+
         self._app.pl_uimgr.clear()
-        self._app.pl_uimgr.add(user.playlists)
-        self._app.pl_uimgr.add(user.fav_playlists, is_fav=True)
-        self._pvd_item.text = f'QQ 音乐 - {user.name}'
+        aio.run_afn(_show_playlists)
 
 
 class LoginDialog(CookiesLoginDialog):
