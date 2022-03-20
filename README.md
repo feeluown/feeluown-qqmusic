@@ -18,6 +18,14 @@ pip3 install fuo-qqmusic
 
 ## changelog
 
+### 0.4.1 (2022-03-21)
+
+- 修复加载歌单时，应用可能会 crash 的问题
+
+### 0.4.0 (???)
+
+- 修复若干问题
+
 ### 0.3.4 (2022-01-31)
 
 感谢 [@cyliuu](https://github.com/cyliuu)
