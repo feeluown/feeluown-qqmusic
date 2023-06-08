@@ -4,6 +4,9 @@
 [![PyPI](https://img.shields.io/pypi/v/fuo_qqmusic.svg)](https://pypi.python.org/pypi/fuo-qqmusic)
 [![Coverage Status](https://coveralls.io/repos/github/feeluown/feeluown-qqmusic/badge.svg?branch=master)](https://coveralls.io/github/feeluown/feeluown-qqmusic?branch=master)
 
+
+2023-06-08：该插件可以和老版本 FeelUOwn(\<v3.9) 一起使用。
+
 ## 安装
 
 ```sh
