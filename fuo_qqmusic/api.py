@@ -15,6 +15,8 @@ from .excs import QQIOError
 
 logger = logging.getLogger(__name__)
 
+api_base_url = 'http://c.y.qq.com'
+
 
 def djb2(string):
     ''' Hash a word using the djb2 algorithm with the specified base. '''
@@ -240,16 +242,62 @@ class API(object):
         return js['req_0']['data']
 
     def artist_albums(self, artist_id, page=1, page_size=20):
-        raise QQIOError('artist_albums api is not available')
+        url = api_base_url + '/v8/fcg-bin/fcg_v8_singer_album.fcg'
+        params = {
+            'singerid': artist_id,
+            'order': 'time',
+            'begin': (page - 1) * page_size,  # TODO: 这里应该代表偏移量
+            'num': page_size
+        }
+        response = requests.get(url, params=params)
+        js = response.json()
+        return js['data']
 
     def album_detail(self, album_id):
-        raise QQIOError('album_detail api is not available')
+        url = api_base_url + '/v8/fcg-bin/fcg_v8_album_detail_cp.fcg'
+        params = {
+            'albumid': album_id,
+            'format': 'json',
+            'newsong': 1
+        }
+        resp = requests.get(url, params=params)
+        return resp.json()['data']
 
     def playlist_detail(self, pid, offset=0, limit=50):
-        raise QQIOError('playlist_detail api is not available')
+        url = api_base_url + '/qzone/fcg-bin/fcg_ucc_getcdinfo_byids_cp.fcg'
+        params = {
+            'type': '1',
+            'utf8': '1',
+            'disstid': pid,
+            'format': 'json',
+            'new_format': '1',  # 需要这个字段来获取file等信息
+            'song_begin': offset,
+            'song_num': limit,
+        }
+        resp = requests.get(url, params=params, headers=self._headers,
+                            cookies=self._cookies, timeout=self._timeout)
+        js = resp.json()
+        if js['code'] != 0:
+            raise CodeShouldBe0(js)
+        return js['cdlist'][0]
 
     def user_detail(self, uid):
-        raise QQIOError('user_detail api is not available')
+        """
+        this API can be called only when user has logged in
+        """
+        url = api_base_url + '/rsc/fcgi-bin/fcg_get_profile_homepage.fcg'
+        params = {
+            # 这两个字段意义不明，不过至少固定为此值时可正常使用
+            'cid': 205360838,
+            'reqfrom': 1,
+            'userid': uid
+        }
+        resp = requests.get(url, params=params, headers=self._headers,
+                            cookies=self._cookies, timeout=self._timeout)
+        js = resp.json()
+        if js['code'] != 0:
+            raise CodeShouldBe0(js)
+        return js['data']
 
     def user_favorite_artists(self, uid, mid, page=1, page_size=30):
         # FIXME: page/page_size is just a guess
@@ -272,10 +320,42 @@ class API(object):
         return js['req_0']['data']['List']
 
     def user_favorite_albums(self, uid, start=0, end=100):
-        raise QQIOError('user_detail api is not available')
+        url = api_base_url + '/fav/fcgi-bin/fcg_get_profile_order_asset.fcg'
+        params = {
+            'ct': 20,  # 不知道此字段什么含义
+            'reqtype': 2,
+            'sin': start,  # 每一页的开始
+            'ein': end,  # 每一页的结尾，目前假设最多收藏 30 个专辑
+            'cid': 205360956,
+            'reqfrom': 1,
+            'userid': uid
+        }
+        resp = requests.get(url, params=params, headers=self._headers,
+                            cookies=self._cookies, timeout=self._timeout)
+        js = resp.json()
+        if js['code'] != 0:
+            raise CodeShouldBe0(js)
+        return js['data']['albumlist']
 
     def user_favorite_playlists(self, uid, mid, start=0, end=100):
-        raise QQIOError('api is not available')
+        url = api_base_url + '/fav/fcgi-bin/fcg_get_profile_order_asset.fcg'
+
+        params = {
+            'loginUin': uid,
+            'userid': mid,
+            'cid': 205360956,
+            'sin': start,
+            'ein': end,
+            'reqtype': 3,
+            'ct': 20,  # 没有该字段 返回中文字符是乱码
+        }
+
+        resp = requests.get(url, params=params, headers=self._headers,
+                            timeout=self._timeout)
+        js = resp.json()
+        if js['code'] != 0:
+            raise CodeShouldBe0(js)
+        return js['data']['cdlist']
 
     def get_recommend_songs_pid(self):
         data = {
@@ -330,7 +410,18 @@ class API(object):
         return ids
 
     def get_lyric_by_songmid(self, songmid):
-        raise QQIOError('get_lyric_by_songmid is not available')
+        url = api_base_url + '/lyric/fcgi-bin/fcg_query_lyric_new.fcg'
+        params = {
+            'songmid': songmid,
+            'pcachetime': int(round(time.time() * 1000)),
+            'format': 'json',
+        }
+        response = requests.get(url, params=params, headers=self._headers,
+                                timeout=self._timeout)
+        js = response.json()
+        CodeShouldBe0.check(js)
+        lyric = js['lyric'] or ''
+        return base64.b64decode(lyric).decode()
 
     def rpc(self, payload):
         if 'comm' not in payload:

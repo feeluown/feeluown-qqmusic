@@ -205,7 +205,7 @@ class QQSongModel(SongModel, QQBaseModel):
 
 class QQAlbumModel(AlbumModel, QQBaseModel):
     class Meta:
-        fields = ['mid']
+        fields = ['mid', 'song_count']
 
     @classmethod
     def get(cls, identifier):
@@ -216,6 +216,14 @@ class QQAlbumModel(AlbumModel, QQBaseModel):
         album = _deserialize(data_album, QQAlbumSchema)
         album.cover = cls._api.get_cover(album.mid, 2)
         return album
+
+    @property
+    def song_count(self):
+        return -1
+
+    @song_count.setter
+    def song_count(self, _):
+        pass
 
 
 class QQArtistModel(ArtistModel, QQBaseModel):
