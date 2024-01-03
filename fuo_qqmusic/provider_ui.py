@@ -6,6 +6,8 @@ from pathlib import Path
 from feeluown.utils import aio
 from feeluown.consts import DATA_DIR
 from feeluown.gui.widgets.login import CookiesLoginDialog, InvalidCookies
+from feeluown.gui.provider_ui import AbstractProviderUi
+from feeluown.app.gui_app import GuiApp
 
 from .provider import provider
 from .excs import QQIOError
@@ -16,29 +18,18 @@ logger = logging.getLogger(__name__)
 USER_INFO_FILE = DATA_DIR + '/qqmusic_user_info.json'
 
 
-class UiManager:
-    def __init__(self, app):
+class ProviderUI(AbstractProviderUi):
+    def __init__(self, app: GuiApp):
         self._app = app
-        self._pvd_item = app.pvd_uimgr.create_item(
-            name=provider.identifier,
-            text='QQ 音乐',
-            symbol='♫ ',
-            desc='点击登录 QQ 音乐',
-            colorful_svg=str(Path(__file__).resolve().parent /
-                             'assets' / 'icon.svg'),
-        )
-        self._pvd_item.clicked.connect(self.login_or_show)
-        app.pvd_uimgr.add_item(self._pvd_item)
 
-        from .page_explore import render as explore_render  # noqa
-        from .page_fav import render as fav_render  # noqa
-        from .page_daily_recommendation import render as dr_render
+    @property
+    def provider(self):
+        return provider
 
-        app.browser.route('/providers/qqmusic/explore')(explore_render)
-        app.browser.route('/providers/qqmusic/fav')(fav_render)
-        app.browser.route('/providers/qqmusic/daily_recommendation')(dr_render)
+    def get_colorful_svg(self) -> str:
+        return os.path.join(os.path.dirname(__file__), 'assets', 'icon.svg')
 
-    def login_or_show(self):
+    def login_or_go_home(self):
         if provider._user is None:
             # According to #14, we have two ways to login:
             # 1. the default way, as the code shows
@@ -65,30 +56,13 @@ class UiManager:
         please ensure user is logged in
         """
         user = provider._user
-        self._app.ui.left_panel.my_music_con.hide()
         self._app.ui.left_panel.playlists_con.show()
-        self._app.ui.left_panel.my_music_con.show()
-
-        mymusic_explore_item = self._app.mymusic_uimgr.create_item('🎵 发现音乐')
-        mymusic_explore_item.clicked.connect(
-            lambda: self._app.browser.goto(page='/providers/qqmusic/explore'),
-            weak=False)
-        mymusic_fav_item = self._app.mymusic_uimgr.create_item('♥ 收藏与关注')
-        mymusic_fav_item.clicked.connect(
-            lambda: self._app.browser.goto(page='/providers/qqmusic/fav'),
-            weak=False)
-
-        self._app.mymusic_uimgr.clear()
-        self._app.mymusic_uimgr.add_item(mymusic_explore_item)
-        # self._app.mymusic_uimgr.add_item(mymusic_rec_item)
-        self._app.mymusic_uimgr.add_item(mymusic_fav_item)
 
         async def _show_playlists():
             playlists = await aio.run_fn(lambda: user.playlists)
             fav_playlists = await aio.run_fn(lambda: user.fav_playlists)
             self._app.pl_uimgr.add(playlists)
             self._app.pl_uimgr.add(fav_playlists, is_fav=True)
-            self._pvd_item.text = f'QQ 音乐 - {user.name}'
 
         self._app.pl_uimgr.clear()
         aio.run_afn(_show_playlists)
