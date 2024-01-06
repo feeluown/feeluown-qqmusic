@@ -351,7 +351,7 @@ class API(object):
         }
 
         resp = requests.get(url, params=params, headers=self._headers,
-                            timeout=self._timeout)
+                            cookies=self._cookies, timeout=self._timeout)
         js = resp.json()
         if js['code'] != 0:
             raise CodeShouldBe0(js)

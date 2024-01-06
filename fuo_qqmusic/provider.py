@@ -2,6 +2,7 @@ import logging
 
 from feeluown.library import AbstractProvider, ProviderV2, ProviderFlags as PF
 from feeluown.models import ModelType
+from feeluown.utils.reader import create_reader
 from .api import API
 
 
@@ -28,6 +29,36 @@ class QQProvider(AbstractProvider, ProviderV2):
     @property
     def name(self):
         return 'QQ 音乐'
+
+    def rec_list_daily_songs(self):
+        if not self.has_current_user():
+            return
+        return self._user.rec_songs
+
+    def rec_list_daily_playlists(self):
+        if not self.has_current_user():
+            return
+        return self._user.rec_playlists
+
+    def current_user_fav_create_songs_rd(self):
+        if self.has_current_user():
+            return create_reader(self._user.fav_songs)
+        return create_reader([])
+
+    def current_user_fav_create_albums_rd(self):
+        if self.has_current_user():
+            return create_reader(self._user.fav_albums)
+        return create_reader([])
+
+    def current_user_fav_create_artists_rd(self):
+        if self.has_current_user():
+            return create_reader(self._user.fav_artists)
+        return create_reader([])
+
+    def current_user_fav_create_playlists_rd(self):
+        if self.has_current_user():
+            return create_reader(self._user.fav_playlists)
+        return create_reader([])
 
     def has_current_user(self):
         return self._user is not None

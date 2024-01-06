@@ -8,15 +8,15 @@ __version__ = '0.3a0'
 __desc__ = 'QQ 音乐'
 
 logger = logging.getLogger(__name__)
-ui_mgr = None
 
 
 def enable(app):
-    global ui_mgr
     app.library.register(provider)
     if app.mode & app.GuiMode:
-        from .ui import UiManager
-        ui_mgr = ui_mgr or UiManager(app)
+        from .provider_ui import ProviderUI
+
+        provider_ui = ProviderUI(app)
+        app.pvd_ui_mgr.register(provider_ui)
 
 
 def disable(app):
