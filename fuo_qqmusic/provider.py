@@ -19,9 +19,9 @@ from feeluown.library import (
     SupportsPlaylistSongsReader,
     SimpleSearchResult,
     SearchType,
+    ModelType,
 )
 from feeluown.media import Media, Quality
-from feeluown.models import ModelType
 from feeluown.utils.reader import create_reader, SequentialReader
 from .api import API
 
