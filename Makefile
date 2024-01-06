@@ -3,14 +3,15 @@
 all: test
 
 lint:
-	flake8 fuo_qqmusic/
+	flake8 --max-line-length=89 fuo_qqmusic/
 
 unittest: pytest
 
 pytest:
 	pytest --cov-report= --cov=fuo_qqmusic
+	pytest tests/
 
-test: lint
+test: lint pytest
 
 clean:
 	find . -name "*~" -exec rm -f {} \;

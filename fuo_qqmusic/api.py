@@ -2,7 +2,6 @@
 # encoding: UTF-8
 
 import base64
-import re
 import hashlib
 import logging
 import math
@@ -311,13 +310,19 @@ class API(object):
                     'HostUin': mid
                 }},
             'comm': {
-                'g_tk': self.get_token_from_cookies(),
+                "cv": 4747474,
+                "ct": 24,
+                'g_tk': int(self.get_token_from_cookies()),
+                'g_tk_new_20200303': int(self.get_token_from_cookies()),
                 'uin': uid,
                 'format': 'json',
+                'notice': 0,
+                'platform': 'yqq.json',
+                'needNewCode': 1,
             }
         }
         js = self.rpc(payload)
-        return js['req_0']['data']['List']
+        return js['req_1']['data']['List']
 
     def user_favorite_albums(self, uid, start=0, end=100):
         url = api_base_url + '/fav/fcgi-bin/fcg_get_profile_order_asset.fcg'
@@ -356,24 +361,6 @@ class API(object):
         if js['code'] != 0:
             raise CodeShouldBe0(js)
         return js['data']['cdlist']
-
-    def get_recommend_songs_pid(self):
-        data = {
-            'req_0': {
-                'module': 'recommend.RecommendFeedServer',
-                'method': 'get_recommend_feed',
-                'param': {
-                    'direction': 0,
-                    'page': 1,
-                    'v_cache': [],
-                    'v_uniq': [],
-                    's_num': 0
-                }
-            },
-        }
-        js = self.rpc(data)
-        disstid = js['req_0']['data']['v_shelf'][0]['v_niche'][0]['v_card'][1]['id']
-        return disstid
 
     def recommend_playlists(self):
         data = {
@@ -434,7 +421,7 @@ class API(object):
         }
         url = 'https://u.y.qq.com/cgi-bin/musicu.fcg'
         resp = requests.get(url, params=params, headers=self._headers,
-                            timeout=self._timeout)
+                            cookies=self._cookies, timeout=self._timeout)
         js = resp.json()
         CodeShouldBe0.check(js)
         return js
