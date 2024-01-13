@@ -153,13 +153,13 @@ class QQProvider(AbstractProvider, ProviderV2):
         :return: when quality is invalid, return None
         """
         q_media_mapping = self._song_get_q_media_mapping(song)
-        quality_suffix = song.cache_get("quality_suffix")
-        mid = song.cache_get("mid")
-        media_id = song.cache_get("media_id")
+        quality_suffix = self._model_cache_get_or_fetch(song, "quality_suffix")
+        mid = self._model_cache_get_or_fetch(song, "mid")
+        media_id = self._model_cache_get_or_fetch(song, "media_id")
         media = q_media_mapping.get(quality)
         if media is UNFETCHED_MEDIA:
             for q, t, b, s in quality_suffix:
-                if quality == q:
+                if quality == Quality.Audio(q):
                     url = self.api.get_song_url_v2(mid, media_id, t)
                     if url:
                         media = Media(url, bitrate=b, format=s)
