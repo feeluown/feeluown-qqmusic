@@ -476,13 +476,7 @@ class API(object):
             },
         }
         js = self.rpc(payload)
-        res_json = []
-        for track in js['songlist']['data']['tracks']:
-            track['songid'] = track.pop('id')
-            track['songmid'] = track.pop('mid')
-            track['songname'] = track.pop('name')
-            res_json.append(track)
-        return res_json
+        return js['songlist']['data']['tracks']
 
     def get_song_url(self, song_mid):
         uin = self._uin

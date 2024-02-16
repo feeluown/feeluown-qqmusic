@@ -247,6 +247,10 @@ class QQProvider(AbstractProvider, ProviderV2):
             pl["logo"] = pl["cover"]
         return [_deserialize(playlist, QQPlaylistSchema) for playlist in playlists]
 
+    def current_user_get_radio_songs(self):
+        songs_data = self.api.get_radio_music()
+        return [_deserialize(s, QQSongSchema) for s in songs_data]
+
     def current_user_list_playlists(self):
         user = self.get_current_user()
         if user is None:
