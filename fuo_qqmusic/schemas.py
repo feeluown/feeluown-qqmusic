@@ -226,7 +226,7 @@ class QQAlbumSchema(Schema):
 class QQPlaylistSchema(Schema):
     identifier = fields.Int(required=True, data_key="dissid")
     name = fields.Str(required=True, data_key="dissname")
-    cover = fields.Url(required=True, data_key="logo")
+    cover = fields.Str(required=True, data_key="logo")
     # songs field maybe null, though it can't be null in model
     songs = fields.List(
         fields.Nested(QQSongSchema), data_key="songlist", allow_none=True
