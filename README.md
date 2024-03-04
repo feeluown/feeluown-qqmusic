@@ -20,6 +20,9 @@ pip3 install fuo-qqmusic
 [操作示例](https://github.com/feeluown/feeluown-qqmusic/issues/6)。
 
 ## changelog
+### 1.0.2 (2024-03-04)
+- 修复获取歌单封面失败的问题 #21
+- 修复获取歌曲播放链接失败的问题 #20
 
 ### 1.0 (2024-01-1)
 - 使用 FeelUOwn 新接口
