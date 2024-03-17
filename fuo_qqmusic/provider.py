@@ -3,6 +3,8 @@ from typing import List, Optional, Protocol
 from feeluown.excs import ModelNotFound
 from feeluown.library import (
     AbstractProvider,
+    BriefSongModel,
+    PlaylistModel,
     ProviderV2,
     ProviderFlags as PF,
     SupportsSongGet,
@@ -17,6 +19,7 @@ from feeluown.library import (
     SupportsArtistGet,
     SupportsPlaylistGet,
     SupportsPlaylistSongsReader,
+    SupportsRecACollection,
     SimpleSearchResult,
     SearchType,
     ModelType,
@@ -42,6 +45,7 @@ class Supports(
     SupportsArtistGet,
     SupportsPlaylistGet,
     SupportsPlaylistSongsReader,
+    SupportsRecACollection,
     Protocol,
 ):
     pass
@@ -246,6 +250,28 @@ class QQProvider(AbstractProvider, ProviderV2):
             pl["dissname"] = pl["title"]
             pl["logo"] = pl["cover"]
         return [_deserialize(playlist, QQPlaylistSchema) for playlist in playlists]
+
+    def rec_a_collection(self):
+        # TODO: cache API result
+        feed = self.api.get_recommend_feed()
+        shelf = None
+        for shelf in feed['v_shelf']:
+            # I guess 10046 means 'song'.
+            if shelf['miscellany'].get('jumptype') == 10046:
+                shelf = shelf
+        if shelf is None:
+            return '', []
+        title = shelf['title_content'] or shelf['title_template']
+        song_ids = []
+        for batch in shelf['v_niche']:
+            for card in batch['v_card']:
+                if card['jumptype'] == 10046:
+                    song_id = int(card['id'])
+                    if song_id not in song_ids:
+                        song_ids.append(song_id)
+
+        tracks = self.api.batch_song_details(song_ids)
+        return title, [_deserialize(track, QQSongSchema) for track in tracks]
 
     def current_user_get_radio_songs(self):
         songs_data = self.api.get_radio_music()

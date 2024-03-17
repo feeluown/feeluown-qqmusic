@@ -177,6 +177,25 @@ class API(object):
             return None
         return data_song
 
+    def batch_song_details(self, song_ids):
+        """
+        song_ids should be a list of int
+        """
+        payload = {
+            'comm': self.get_wkv17_common_params(),
+            'req_0': {
+                'module': 'music.trackInfo.UniformRuleCtrl',
+                'method': 'CgiGetTrackInfo',
+                'param': {
+                    'ids': song_ids,
+                    'types': [200]*len(song_ids),
+                    'source': 'AiNoFree',
+                }
+            }
+        }
+        js = self.rpc(payload)
+        return js['req_0']['data']['tracks']
+
     def song_similar(self, song_id):
         payload = {
             "simsongs": {
@@ -377,24 +396,24 @@ class API(object):
         playlist = js['recomPlaylist']
         return playlist['data']['v_hot']
 
-    def get_recommend_playlists_ids(self, index=0):
+    def get_recommend_feed(self, page=1):
+        # APIs are found in https://y.qq.com/wk_v17/#/recommend
         data = {
             'req_0': {
                 'module': 'recommend.RecommendFeedServer',
                 'method': 'get_recommend_feed',
                 'param': {
                     'direction': 0,
-                    'page': 1,
+                    'page': page,
                     'v_cache': [],
                     'v_uniq': [],
                     's_num': 0
                 }
             },
+            'comm': self.get_wkv17_common_params(),
         }
         js = self.rpc(data)
-        ids = [card['id']
-               for card in js['req_0']['data']['v_shelf'][index]['v_niche'][0]['v_card']]
-        return ids
+        return js['req_0']['data']
 
     def get_lyric_by_songmid(self, songmid):
         url = api_base_url + '/lyric/fcgi-bin/fcg_query_lyric_new.fcg'
@@ -425,6 +444,22 @@ class API(object):
         js = resp.json()
         CodeShouldBe0.check(js)
         return js
+
+    def get_wkv17_common_params(self):
+        return {
+            # ct field is important, without this field,
+            # the req_0 result is completely different.
+            "ct": 20,
+            "cv": 1770,
+            'g_tk': 5381,
+            'uin': self._uin,
+            'format': 'json',
+            'inCharset': 'utf-8',
+            'outCharset': 'utf-8',
+            'platform': 'wk_v17',
+            'uid': '',
+            'guid': '',
+        }
 
     def get_common_params(self):
         return {
