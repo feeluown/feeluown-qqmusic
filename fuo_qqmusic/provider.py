@@ -5,6 +5,8 @@ from feeluown.library import (
     AbstractProvider,
     BriefSongModel,
     PlaylistModel,
+    Collection,
+    CollectionType,
     ProviderV2,
     ProviderFlags as PF,
     SupportsSongGet,
@@ -19,7 +21,7 @@ from feeluown.library import (
     SupportsArtistGet,
     SupportsPlaylistGet,
     SupportsPlaylistSongsReader,
-    SupportsRecACollection,
+    SupportsRecACollectionOfSongs,
     SimpleSearchResult,
     SearchType,
     ModelType,
@@ -45,7 +47,7 @@ class Supports(
     SupportsArtistGet,
     SupportsPlaylistGet,
     SupportsPlaylistSongsReader,
-    SupportsRecACollection,
+    SupportsRecACollectionOfSongs,
     Protocol,
 ):
     pass
@@ -251,7 +253,7 @@ class QQProvider(AbstractProvider, ProviderV2):
             pl["logo"] = pl["cover"]
         return [_deserialize(playlist, QQPlaylistSchema) for playlist in playlists]
 
-    def rec_a_collection(self):
+    def rec_a_collection_of_songs(self):
         # TODO: cache API result
         feed = self.api.get_recommend_feed()
         shelf = None
@@ -271,7 +273,10 @@ class QQProvider(AbstractProvider, ProviderV2):
                         song_ids.append(song_id)
 
         tracks = self.api.batch_song_details(song_ids)
-        return title, [_deserialize(track, QQSongSchema) for track in tracks]
+        return Collection(name=title,
+                          type_=CollectionType.only_songs,
+                          models=[_deserialize(track, QQSongSchema) for track in tracks],
+                          description='')
 
     def current_user_get_radio_songs(self):
         songs_data = self.api.get_radio_music()
