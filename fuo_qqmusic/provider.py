@@ -240,7 +240,7 @@ class QQProvider(AbstractProvider, ProviderV2):
         songs = self._model_cache_get_or_fetch(playlist, "songs")
         return create_reader(songs)
 
-    def rec_list_daily_playlists(self):
+    def __rec_hot_playlists(self):
         user = self.get_current_user()
         if user is None:
             return []
@@ -253,16 +253,45 @@ class QQProvider(AbstractProvider, ProviderV2):
             pl["logo"] = pl["cover"]
         return [_deserialize(playlist, QQPlaylistSchema) for playlist in playlists]
 
+    def rec_list_daily_playlists(self):
+        # TODO: cache API result
+        feed = self.api.get_recommend_feed()
+        shelf = None
+        for shelf_ in feed['v_shelf']:
+            # I guess 10046 means 'song'.
+            if shelf_['extra_info'].get('moduleID', '').startswith('playlist'):
+                shelf = shelf_
+                break
+        if shelf is None:
+            return []
+        playlists = []
+        for batch in shelf['v_niche']:
+            for card in batch['v_card']:
+                print(card['title'], card['jumptype'])
+                if card['jumptype'] == 10014:  # 10014->playlist
+                    playlists.append(
+                        PlaylistModel(identifier=str(card['id']),
+                                      source=SOURCE,
+                                      name=card['title'],
+                                      cover=card['cover'],
+                                      description=card['miscellany']['rcmdtemplate'])
+                    )
+        return playlists
+
     def rec_a_collection_of_songs(self):
         # TODO: cache API result
         feed = self.api.get_recommend_feed()
         shelf = None
-        for shelf in feed['v_shelf']:
+        for shelf_ in feed['v_shelf']:
             # I guess 10046 means 'song'.
-            if shelf['miscellany'].get('jumptype') == 10046:
-                shelf = shelf
+            if int(shelf_['miscellany'].get('jumptype', 0)) == 10046:
+                shelf = shelf_
+                break
         if shelf is None:
-            return '', []
+            return Collection(name='',
+                              type_=CollectionType.only_songs,
+                              models=[],
+                              description='')
         title = shelf['title_content'] or shelf['title_template']
         song_ids = []
         for batch in shelf['v_niche']:
