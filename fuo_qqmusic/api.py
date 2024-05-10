@@ -247,6 +247,7 @@ class API(object):
                     'singerid': artist_id,
                     'begin': (page - 1) * page_size,
                     'num': page_size,
+                    'order': 1,  # 热门/新，不带这个字段就是按歌曲新旧排序
                     # 有 newsong 字段时，服务端会返回含有 file 字段的字典
                     'newsong': 1
                 }},
