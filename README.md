@@ -20,6 +20,10 @@ pip3 install fuo-qqmusic
 [操作示例](https://github.com/feeluown/feeluown-qqmusic/issues/6)。
 
 ## changelog
+### 1.0.4 (2024-05-21)
+- 歌手歌曲排序切换为”按热度排序”
+- 修复推荐歌单接口
+
 ### 1.0.3 (2024-04-21)
 - 适配 feeluown 4.1.3 的新主页功能
 

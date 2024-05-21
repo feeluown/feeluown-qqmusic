@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='fuo_qqmusic',
-    version='1.0.3',
+    version='1.0.4',
     description='feeluown qqmusic plugin',
     author='Cosven',
     author_email='yinshaowen241@gmail.com',
