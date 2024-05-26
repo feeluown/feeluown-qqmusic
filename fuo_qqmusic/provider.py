@@ -274,7 +274,8 @@ class QQProvider(AbstractProvider, ProviderV2):
                                       source=SOURCE,
                                       name=card['title'],
                                       cover=card['cover'],
-                                      description=card['miscellany']['rcmdtemplate'])
+                                      description=card['miscellany']['rcmdtemplate'],
+                                      play_count=card['cnt'])
                     )
         return playlists
 
