@@ -10,6 +10,7 @@ from feeluown.library import (
     PlaylistModel,
     BriefPlaylistModel,
     UserModel,
+    VideoModel,
 )
 
 logger = logging.getLogger(__name__)
@@ -143,6 +144,17 @@ class _BriefArtistSchema(Schema):
         return create_model(BriefArtistModel, data, ["mid"])
 
 
+class SearchArtistSchema(_BriefArtistSchema):
+    pic_url = fields.Str(data_key="singerPic", required=True)
+
+    @post_load
+    def create_model(self, data, **kwargs):
+        data['hot_songs'] = []
+        data['description'] = ''
+        data['aliases'] = []
+        return create_model(ArtistModel, data, ["mid"])
+
+
 class _BriefAlbumSchema(Schema):
     identifier = fields.Int(data_key="albumID", required=True)
     mid = fields.Str(data_key="albumMID", required=True)
@@ -151,6 +163,20 @@ class _BriefAlbumSchema(Schema):
     @post_load
     def create_model(self, data, **kwargs):
         return create_model(BriefAlbumModel, data, ["mid"])
+
+
+class SearchAlbumSchema(_BriefAlbumSchema):
+    cover = fields.Str(data_key="albumPic", required=True)
+    released = fields.Str(data_key="publicTime", required=True)
+    song_count = fields.Int(required=True)
+    artists = fields.List(fields.Nested(_SongArtistSchema),
+                          data_key="singer_list",
+                          required=True)
+    @post_load
+    def create_model(self, data, **kwargs):
+        data['description'] = ''
+        data['songs'] = []
+        return create_model(AlbumModel, data, ['mid'])
 
 
 class _BriefPlaylistSchema(Schema):
@@ -162,6 +188,27 @@ class _BriefPlaylistSchema(Schema):
     def create_model(self, data, **kwargs):
         data['description'] = ''
         return create_model(PlaylistModel, **data)
+
+
+class PlaylistUserSchema(Schema):
+    identifier = fields.Str(data_key="creator_uin", required=True)
+    mid = fields.Str(data_key="encrypt_uin", required=True)
+    name = fields.Str(required=True)
+    avatar_url = fields.Str(required=True, data_key="avatarUrl")
+
+    @post_load
+    def create_model(self, data, **kwargs):
+        return create_model(UserModel, data, ['mid'])
+
+
+class SearchPlaylistSchema(_BriefPlaylistSchema):
+    creator = fields.Nested("PlaylistUserSchema", required=True)
+    description = fields.Str(data_key="introduction", required=True)
+    play_count = fields.Int(data_key="listennum", required=True)
+
+    @post_load
+    def create_model(self, data, **kwargs):
+        return create_model(PlaylistModel, data)
 
 
 class QQArtistSchema(Schema):
@@ -294,3 +341,19 @@ class QQUserSchema(Schema):
             playlists=playlists,
         )
         return create_model(UserModel, data, ['mid', 'fav_pid', 'playlists'])
+
+
+class SearchMVSchema(Schema):
+    # 使用 mv_id 字段的话，目前拿不到播放 url，用 v_id  比较合适
+    identifier = fields.Str(data_key="v_id", required=True)
+    title = fields.Str(data_key="mv_name", required=True)
+    artists = fields.List(fields.Nested("_SongArtistSchema"),
+                          data_key="singer_list",
+                          required=True)
+    duration = fields.Int(required=True)
+    cover = fields.Str(data_key="mv_pic_url", required=True)
+    play_count = fields.Int(required=True)
+
+    @post_load
+    def create_model(self, data, **kwargs):
+        return create_model(VideoModel, data)

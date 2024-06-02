@@ -1,0 +1,74 @@
+[
+  {
+    "albumNum": 21,
+    "concern_status": 0,
+    "docid": "7782912977670576672",
+    "mvNum": 542,
+    "singerID": 42,
+    "singerMID": "002UGAkU4ZDoTZ",
+    "singerName": "\u674e\u5b97\u76db",
+    "singerName_hilight": "<em>\u674e\u5b97\u76db</em>",
+    "singerPic": "http://y.gtimg.cn/music/photo_new/T001R150x150M000002UGAkU4ZDoTZ_2.jpg",
+    "songNum": 261
+  },
+  {
+    "albumNum": 5,
+    "concern_status": 0,
+    "docid": "5380835150391856054",
+    "mvNum": 124,
+    "singerID": 14798,
+    "singerMID": "000Ba3ok3757PB",
+    "singerName": "\u7eb5\u8d2f\u7ebf",
+    "singerName_hilight": "\u7eb5\u8d2f\u7ebf",
+    "singerPic": "http://y.gtimg.cn/music/photo_new/T001R150x150M000000Ba3ok3757PB_3.jpg",
+    "songNum": 153
+  },
+  {
+    "albumNum": 78,
+    "concern_status": 0,
+    "docid": "2206187333371488615",
+    "mvNum": 689,
+    "singerID": 96,
+    "singerMID": "003NThQh3ujqIo",
+    "singerName": "\u5468\u534e\u5065",
+    "singerName_hilight": "\u5468\u534e\u5065",
+    "singerPic": "http://y.gtimg.cn/music/photo_new/T001R150x150M000003NThQh3ujqIo_3.jpg",
+    "songNum": 882
+  },
+  {
+    "albumNum": 30,
+    "concern_status": 0,
+    "docid": "11807114905841669026",
+    "mvNum": 319,
+    "singerID": 89,
+    "singerMID": "003gA4Y334rnOf",
+    "singerName": "\u5f20\u9707\u5cb3",
+    "singerName_hilight": "\u5f20\u9707\u5cb3",
+    "singerPic": "http://y.gtimg.cn/music/photo_new/T001R150x150M000003gA4Y334rnOf_3.jpg",
+    "songNum": 334
+  },
+  {
+    "albumNum": 49,
+    "concern_status": 0,
+    "docid": "16588434895961641761",
+    "mvNum": 246,
+    "singerID": 53,
+    "singerMID": "002T0ifq4LjAcD",
+    "singerName": "\u7f57\u5927\u4f51",
+    "singerName_hilight": "\u7f57\u5927\u4f51",
+    "singerPic": "http://y.gtimg.cn/music/photo_new/T001R150x150M000002T0ifq4LjAcD_7.jpg",
+    "songNum": 361
+  },
+  {
+    "albumNum": 111,
+    "concern_status": 0,
+    "docid": "11052192847613003386",
+    "mvNum": 559,
+    "singerID": 47,
+    "singerMID": "002u0TJy47WWOj",
+    "singerName": "\u6797\u5fc6\u83b2",
+    "singerName_hilight": "\u6797\u5fc6\u83b2",
+    "singerPic": "http://y.gtimg.cn/music/photo_new/T001R150x150M000002u0TJy47WWOj_2.jpg",
+    "songNum": 872
+  }
+]

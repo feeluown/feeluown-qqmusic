@@ -18,6 +18,7 @@ from feeluown.library import (
     SupportsVideoGet,
     SupportsSongLyric,
     SupportsAlbumGet,
+    SupportsAlbumSongsReader,
     SupportsArtistGet,
     SupportsPlaylistGet,
     SupportsPlaylistSongsReader,
@@ -48,6 +49,7 @@ class Supports(
     SupportsPlaylistGet,
     SupportsPlaylistSongsReader,
     SupportsRecACollectionOfSongs,
+    SupportsAlbumSongsReader,
     Protocol,
 ):
     pass
@@ -224,6 +226,10 @@ class QQProvider(AbstractProvider, ProviderV2):
         album = _deserialize(data_album, QQAlbumSchema)
         return album
 
+    def album_create_songs_rd(self, album):
+        album = self.album_get(album.identifier)
+        return create_reader(album.songs)
+
     def user_get(self, identifier):
         data = self.api.user_detail(identifier)
         data["creator"]["fav_pid"] = data["mymusic"][0]["id"]
@@ -395,26 +401,29 @@ def create_g(func, identifier, schema):
 
 def search(keyword, **kwargs):
     type_ = SearchType.parse(kwargs["type_"])
-    if type_ == SearchType.pl:
-        data = provider.api.search_playlists(keyword)
-        playlists = [_deserialize(playlist, _BriefPlaylistSchema) for playlist in data]
+    type_type_map = {
+        SearchType.so: 0,
+        SearchType.ar: 1,
+        SearchType.al: 2,
+        SearchType.pl: 3,
+        SearchType.vi: 4,
+    }
+    data = provider.api.search(keyword, type_=type_type_map[type_])
+    if type_ == SearchType.so:
+        songs = [_deserialize(song, QQSongSchema) for song in data]
+        return SimpleSearchResult(q=keyword, songs=songs)
+    if type_ == SearchType.ar:
+        artists = [_deserialize(artist, SearchArtistSchema) for artist in data]
+        return SimpleSearchResult(q=keyword, artists=artists)
+    elif type_ == SearchType.al:
+        albums = [_deserialize(album, SearchAlbumSchema) for album in data]
+        return SimpleSearchResult(q=keyword, albums=albums)
+    elif type_ == SearchType.pl:
+        playlists = [_deserialize(playlist, SearchPlaylistSchema) for playlist in data]
         return SimpleSearchResult(q=keyword, playlists=playlists)
-    else:
-        type_type_map = {
-            SearchType.so: 0,
-            SearchType.al: 8,
-            SearchType.ar: 9,
-        }
-        data = provider.api.search(keyword, type_=type_type_map[type_])
-        if type_ == SearchType.so:
-            songs = [_deserialize(song, QQSongSchema) for song in data]
-            return SimpleSearchResult(q=keyword, songs=songs)
-        elif type_ == SearchType.al:
-            albums = [_deserialize(album, _BriefAlbumSchema) for album in data]
-            return SimpleSearchResult(q=keyword, albums=albums)
-        else:
-            artists = [_deserialize(artist, _BriefArtistSchema) for artist in data]
-            return SimpleSearchResult(q=keyword, artists=artists)
+    elif type_ == SearchType.vi:
+        models = [_deserialize(model, SearchMVSchema) for model in data]
+        return SimpleSearchResult(q=keyword, videos=models)
 
 
 provider = QQProvider()
@@ -428,9 +437,12 @@ from .schemas import (  # noqa
     _BriefAlbumSchema,
     _UserArtistSchema,
     _BriefArtistSchema,
-    _BriefPlaylistSchema,
     QQAlbumSchema,
     QQPlaylistSchema,
     QQUserSchema,
     _UserAlbumSchema,
+    SearchAlbumSchema,
+    SearchArtistSchema,
+    SearchPlaylistSchema,
+    SearchMVSchema,
 )  # noqa

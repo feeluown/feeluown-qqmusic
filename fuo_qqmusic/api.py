@@ -124,10 +124,14 @@ class API(object):
         # Other supported types: songlist, user, mv, qc, gedantip, zhida.
         if type_ == 0:
             key_ = 'song'
-        elif type_ == 8:
-            key_ = 'album'
-        elif type_ == 9:
+        elif type_ == 1:
             key_ = 'singer'
+        elif type_ == 2:
+            key_ = 'album'
+        elif type_ == 3:
+            key_ = 'songlist'  # playlist
+        elif type_ == 4:
+            key_ = 'mv'  # video
         else:
             raise QQIOError('invalid search type_:%d', type_)
         payload = {
