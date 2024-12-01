@@ -58,7 +58,7 @@ class API(object):
     Please http capture request from (mobile) qqmusic mobile web page
     """
 
-    def __init__(self, timeout=1):
+    def __init__(self, timeout=2):
         # TODO: 暂时无脑统一一个 timeout
         # 正确的应该是允许不同接口有不同的超时时间
         self._timeout = timeout

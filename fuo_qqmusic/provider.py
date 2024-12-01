@@ -273,7 +273,6 @@ class QQProvider(AbstractProvider, ProviderV2):
         playlists = []
         for batch in shelf['v_niche']:
             for card in batch['v_card']:
-                print(card['title'], card['jumptype'])
                 if card['jumptype'] == 10014:  # 10014->playlist
                     playlists.append(
                         PlaylistModel(identifier=str(card['id']),
