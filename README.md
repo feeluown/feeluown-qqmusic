@@ -20,6 +20,10 @@ pip3 install fuo-qqmusic
 [操作示例](https://github.com/feeluown/feeluown-qqmusic/issues/6)。
 
 ## changelog
+### 1.0.6 (2025-05-08)
+- 支持每日推荐
+- 支持自动登录
+
 ### 1.0.5 (2024-06-03)
 - 修复搜索接口，支持搜索歌单、视频、专辑
 - 支持提供歌单的播放次数
