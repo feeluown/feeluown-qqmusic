@@ -518,6 +518,33 @@ class API(object):
         js = self.rpc(payload)
         return js['songlist']['data']['tracks']
 
+    def get_diss_info(self, dissid, offset=0, limit=50):
+        """获取歌单的详情
+
+        这是一种特殊的歌单，它的内容是动态的，由官方生成。比如“百万收藏”。
+
+        :param dissid: int, 举个例子 211111 是百万收藏。
+        :return: 参考 fixtures/get_diss_info.json
+        """
+        payload = {
+            'req': {
+                "module": "music.srfDissInfo.aiDissInfo",
+                "method":"uniform_get_Dissinfo",
+                "param": {
+                    "disstid":dissid,
+                    "userinfo":1,  # 不懂啥意思
+                    "tag":1,  # 不懂啥意思
+                    "orderlist":1,
+                    "song_begin": offset,
+                    "song_num": limit,
+                    "onlysonglist":0,
+                    "enc_host_uin":""  # 注：即使登录了，这个也是空
+                }
+            }
+        }
+        js = self.rpc(payload)
+        return js['req']['data']
+
     def get_song_url(self, song_mid):
         uin = self._uin
         songvkey = str(random.random()).replace("0.", "")

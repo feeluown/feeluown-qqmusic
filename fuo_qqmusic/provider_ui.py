@@ -11,18 +11,9 @@ from feeluown.app.gui_app import GuiApp
 
 from .provider import provider
 from .excs import QQIOError
+from .login import read_cookies, write_cookies
 
 logger = logging.getLogger(__name__)
-
-
-USER_INFO_FILE = DATA_DIR + '/qqmusic_user_info.json'
-
-
-def read_cookies():
-    if os.path.exists(USER_INFO_FILE):
-        # if the file is broken, just raise error
-        with open(USER_INFO_FILE) as f:
-            return json.load(f).get('cookies', None)
 
 
 class ProviderUI(AbstractProviderUi):
@@ -72,31 +63,13 @@ class LoginDialog(CookiesLoginDialog):
         provider._user = user
 
     async def user_from_cookies(self, cookies):
-        if not cookies:  # is None or empty
-            raise InvalidCookies('empty cookies')
-
-        uin = provider.api.get_uin_from_cookies(cookies)
-        if uin is None:
-            raise InvalidCookies("can't extract user info from cookies")
-
-        provider.api.set_cookies(cookies)
-        # try to extract current user
-        try:
-            user = await run_fn(provider.user_get, uin)
-        except QQIOError:
-            provider.api.set_cookies(None)
-            raise InvalidCookies('get user info with cookies failed, expired cookies?')
-        else:
+        user, err = await run_fn(provider.try_get_user_from_cookies, cookies)
+        if user:
             return user
+        raise InvalidCookies(err)
 
     def load_user_cookies(self):
         return read_cookies()
 
     def dump_user_cookies(self, user, cookies):
-        js = {
-            'identifier': user.identifier,
-            'name': user.name,
-            'cookies': cookies
-        }
-        with open(USER_INFO_FILE, 'w') as f:
-            json.dump(js, f, indent=2)
+        write_cookies(user, cookies)

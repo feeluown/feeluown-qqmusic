@@ -1,0 +1,596 @@
+{
+    "code": 0,
+    "ts": 1111111111111,
+    "start_ts": 1111111111111,
+    "traceid": "1111111111111111",
+    "req": {
+        "code": 0,
+        "data": {
+            "code": 0,
+            "subcode": 0,
+            "msg": "",
+            "from_gedan_plaza": 0,
+            "accessed_plaza_cache": 0,
+            "accessed_byfav": 1,
+            "optype": 0,
+            "filter_song_num": 0,
+            "dirinfo": {
+                "id": 211111,
+                "host_uin": 0,
+                "dirid": 0,
+                "title": "百万收藏",
+                "picurl": "http://y.gtimg.cn/music/photo_new/T002R500x500M000002RLd9D4RcjhT.jpg",
+                "picid": 0,
+                "desc": "QQ音乐用户常听的人气好歌都在这里，歌单中每一首歌都超过百万收藏或者具有百万收藏的潜力。歌单每日更新，点击红心收藏吧！",
+                "vec_tagid": [],
+                "vec_tagname": [],
+                "ctime": 1,
+                "mtime": 1746707770,
+                "listennum": 0,
+                "ordernum": 4723017,
+                "picmid": "",
+                "dirtype": 0,
+                "host_nick": "QQ音乐官方歌单",
+                "songnum": 50,
+                "ordertime": 0,
+                "show": 1,
+                "picurl2": "https://y.qq.com/music/photo_new/T011R750x750M000000Ov0go4V8u52.jpg",
+                "song_update_time": 0,
+                "song_update_num": 0,
+                "disstype": 3,
+                "ai_uin": 0,
+                "dv2": 1746707770,
+                "dir_show": 1,
+                "encrypt_uin": "oooooooooooooo**",
+                "encrypt_ai_uin": "oooooooooooooooooooooooooo**",
+                "owndir": 0,
+                "headurl": "https://thirdqq.qlogo.cn/g?b=sdk\u0026k=5ToXzGKjL50V5ZdUyESzng\u0026s=140\u0026t=1533809549",
+                "tag": [],
+                "creator": {
+                    "musicid": 2783429033,
+                    "type": 0,
+                    "singerid": 0,
+                    "nick": "QQ音乐官方歌单",
+                    "headurl": "https://thirdqq.qlogo.cn/g?b=sdk\u0026k=5ToXzGKjL50V5ZdUyESzng\u0026s=140\u0026t=1533809549",
+                    "ifpicurl": "",
+                    "encrypt_uin": "oooooooooooooo**",
+                    "isVip": 0,
+                    "ai_uin": 1111111111111111111,
+                    "encrypt_ai_uin": "oooooooooooooooooooooooooo**",
+                    "ext": null
+                },
+                "status": 0,
+                "edge_mark": "",
+                "layer_url": "https://y.qq.com/music/photo_new/T011R426x426M0000030bucM3oh8tR.png",
+                "ext1": "https://y.qq.com/music/photo_new/T011R750x750M000003v1p1e4EycgP.jpg",
+                "ext2": "",
+                "origin_title": "",
+                "ad_tag": false,
+                "aiToast": "",
+                "role": 0,
+                "rl2": 0
+            },
+            "songlist": [
+                {
+                    "id": 443993,
+                    "type": 0,
+                    "songtype": 0,
+                    "version": 0,
+                    "trace": "#algotorial:11055#0:211111#1:0:1:fa7@1334#11529215048033246701746685697#1:443993:0#1746685697",
+                    "mid": "000JHYA12lx3kP",
+                    "name": "爱一点",
+                    "label": "0",
+                    "title": "爱一点",
+                    "subtitle": "《非常幸运》电影主题曲",
+                    "interval": 256,
+                    "isonly": 0,
+                    "language": 0,
+                    "genre": 1,
+                    "index_cd": 0,
+                    "index_album": 1,
+                    "status": 0,
+                    "fnote": 4009,
+                    "url": "",
+                    "time_public": "2008-09-19",
+                    "singer": [
+                        {
+                            "id": 280,
+                            "mid": "002Ct0dH3fExZE",
+                            "name": "莫艳琳",
+                            "title": "莫艳琳"
+                        }
+                    ],
+                    "album": {
+                        "id": 36129,
+                        "mid": "002RLd9D4RcjhT",
+                        "name": "宅情歌",
+                        "title": "宅情歌",
+                        "pmid": "002RLd9D4RcjhT_1"
+                    },
+                    "mv": {
+                        "id": 39077,
+                        "vid": "u0024663g33",
+                        "vt": 0
+                    },
+                    "ksong": {
+                        "id": 872,
+                        "mid": "003NRKm304YR6y"
+                    },
+                    "file": {
+                        "media_mid": "000tDTCi0tbNGQ",
+                        "size_try": 960887,
+                        "try_begin": 68264,
+                        "try_end": 110307,
+                        "size_24aac": 0,
+                        "size_48aac": 1553470,
+                        "size_96aac": 3124297,
+                        "size_128mp3": 4102463,
+                        "size_192ogg": 6185086,
+                        "size_192aac": 6139827,
+                        "size_320mp3": 10255867,
+                        "size_flac": 29713406,
+                        "size_ape": 0,
+                        "size_dts": 0,
+                        "size_hires": 0,
+                        "hires_sample": 0,
+                        "hires_bitdepth": 0,
+                        "b_30s": 24800,
+                        "e_30s": 84800,
+                        "size_96ogg": 3023330,
+                        "size_360ra": [],
+                        "size_dolby": 0,
+                        "size_new": [
+                            179036136,
+                            29655611,
+                            74665234,
+                            10649363,
+                            0,
+                            22464144
+                        ]
+                    },
+                    "volume": {
+                        "gain": -7.779,
+                        "peak": 1,
+                        "lra": 4.724
+                    },
+                    "pay": {
+                        "pay_month": 1,
+                        "price_track": 200,
+                        "price_album": 0,
+                        "pay_play": 1,
+                        "pay_down": 1,
+                        "pay_status": 0,
+                        "time_free": 0
+                    },
+                    "action": {
+                        "switch": 16905999,
+                        "alert": 16,
+                        "msgshare": 0,
+                        "msgfav": 0,
+                        "msgid": 0,
+                        "msgdown": 0,
+                        "icons": 12992510,
+                        "msgpay": 0,
+                        "switch2": 917504,
+                        "icon2": 0
+                    },
+                    "uiAction": 0,
+                    "new_icon": 0,
+                    "tid": 0,
+                    "ov": 1,
+                    "tf": "",
+                    "sa": 17416,
+                    "es": "",
+                    "abt": "14794_0,326_0,3136_0,3898_0,3334_3334003,,,,",
+                    "pingpong": "{\"abt\":\"14794_0,326_0,3136_0,3898_0,3334_3334003,,,,\",\"trace\":\"#algotorial:11055#0:211111#1:0:1:fa7@1334#11529215048033246701746685697#1:443993:0#1746685697\",\"tf\":\"\"}",
+                    "data_type": 0,
+                    "ppurl": "",
+                    "vs": [
+                        "064T8srJ0DzcR5",
+                        "",
+                        "",
+                        "003tUjdT0Jwmwg",
+                        "003mxhdd3oSD4B",
+                        "",
+                        "",
+                        "",
+                        "",
+                        "0032CxBj2W952E",
+                        "",
+                        "",
+                        "",
+                        "004T2pbU2wPd16",
+                        "000qnnOW0MoP5g",
+                        "001Q9lEd3bXeEH",
+                        "000kICRk1gXioN",
+                        "0000aqln2QuFo0",
+                        "000WQrPf2tGJtl"
+                    ],
+                    "bpm": 0,
+                    "ktag": "",
+                    "team": "",
+                    "vf": [
+                        -7.40603,
+                        0.999969,
+                        4.725046
+                    ],
+                    "bf": 0
+                }
+            ],
+            "login_uin": 0,
+            "invalid_song": [],
+            "filtered_song": [],
+            "ad_list": [],
+            "total_song_num": 1,
+            "encrypt_login": "oK6kowEAoK4z7eczoioA7eClon**",
+            "ct": 24,
+            "cv": 4747474,
+            "ip": "115.220.235.37",
+            "orderlist": [],
+            "cmtURL_bykey": {
+                "url_key": "",
+                "url_params": ""
+            },
+            "srf_ip": "11.154.181.11",
+            "referer": "",
+            "namedflag": 0,
+            "isAd": 0,
+            "adTitle": "",
+            "adUrl": "",
+            "isForbidComment": 0,
+            "songtag": [
+                {
+                    "id": 443993,
+                    "tag": "超100w人收藏",
+                    "link": "qqmusic://qq.com/ui/similarSongs?p=%7B%22songid%22%3A%22443993%22%2C%22tagid%22%3A%223045%22%2C%22tagName%22%3A%22%E8%B6%85100w%E4%BA%BA%E6%94%B6%E8%97%8F%22%7D",
+                    "tagid": 3045,
+                    "from_type": 9
+                },
+                {
+                    "id": 5083126,
+                    "tag": "收藏50w+",
+                    "link": "qqmusic://qq.com/ui/similarSongs?p=%7B%22songid%22%3A%225083126%22%2C%22tagid%22%3A%223058%22%2C%22tagName%22%3A%22%E6%94%B6%E8%97%8F50w%2B%22%7D",
+                    "tagid": 3058,
+                    "from_type": 9
+                },
+                {
+                    "id": 101812795,
+                    "tag": "环绕",
+                    "link": "",
+                    "tagid": 3603,
+                    "from_type": 36
+                },
+                {
+                    "id": 102213178,
+                    "tag": "\"唱到每个人的心里\"",
+                    "link": "",
+                    "tagid": 159833,
+                    "from_type": 28
+                },
+                {
+                    "id": 130363,
+                    "tag": "十大中文金曲获奖",
+                    "link": "qqmusic://qq.com/ui/openUrl?p=%7B%22url%22%3A%22https%3A%2F%2Fy.qq.com%2Fm%2Fclient%2Faward_set_v2%2Findex.html%3FsessionID%3D542%26_hidehd%3D1%26_fontScale%3D1%26_hdct%3D1%22%7D",
+                    "tagid": 132,
+                    "from_type": 6
+                },
+                {
+                    "id": 1538208,
+                    "tag": "写给回忆的歌",
+                    "link": "",
+                    "tagid": 5031,
+                    "from_type": 22
+                },
+                {
+                    "id": 481456,
+                    "tag": "收藏400w+",
+                    "link": "qqmusic://qq.com/ui/similarSongs?p=%7B%22songid%22%3A%22481456%22%2C%22tagid%22%3A%223061%22%2C%22tagName%22%3A%22%E6%94%B6%E8%97%8F400w%2B%22%7D",
+                    "tagid": 3061,
+                    "from_type": 9
+                },
+                {
+                    "id": 4903883,
+                    "tag": "评论1w+",
+                    "link": "qqmusic://qq.com/ui/similarSongs?p=%7B%22songid%22%3A%224903883%22%2C%22tagid%22%3A%223049%22%2C%22tagName%22%3A%22%E8%AF%84%E8%AE%BA1w%2B%22%7D",
+                    "tagid": 3049,
+                    "from_type": 9
+                },
+                {
+                    "id": 352949946,
+                    "tag": "内地榜历史上榜",
+                    "link": "qqmusic://qq.com/ui/toplist?p=%7B%22id%22%3A%225%22%2C%22no%22%3A%222022_20%22%7D",
+                    "tagid": 5,
+                    "from_type": 15
+                },
+                {
+                    "id": 342963448,
+                    "tag": "昨日热播",
+                    "link": "qqmusic://qq.com/ui/similarSongs?p=%7B%22songid%22%3A%22342963448%22%2C%22tagid%22%3A%223040%22%2C%22tagName%22%3A%22%E6%98%A8%E6%97%A5%E7%83%AD%E6%92%AD%22%7D",
+                    "tagid": 3040,
+                    "from_type": 9
+                },
+                {
+                    "id": 354111778,
+                    "tag": "评论999+",
+                    "link": "qqmusic://qq.com/ui/similarSongs?p=%7B%22songid%22%3A%22354111778%22%2C%22tagid%22%3A%223036%22%2C%22tagName%22%3A%22%E8%AF%84%E8%AE%BA999%2B%22%7D",
+                    "tagid": 3036,
+                    "from_type": 9
+                },
+                {
+                    "id": 389976997,
+                    "tag": "本周热播",
+                    "link": "qqmusic://qq.com/ui/similarSongs?p=%7B%22songid%22%3A%22389976997%22%2C%22tagid%22%3A%223043%22%2C%22tagName%22%3A%22%E6%9C%AC%E5%91%A8%E7%83%AD%E6%92%AD%22%7D",
+                    "tagid": 3043,
+                    "from_type": 9
+                },
+                {
+                    "id": 574620355,
+                    "tag": "巅峰潮流榜No.39",
+                    "link": "qqmusic://qq.com/ui/openRN?p=%7B%22key%22%3A%22PopToplist%22%2C%22params%22%3A%7B%22songId%22%3A%22574620355%22%7D%7D",
+                    "tagid": 135,
+                    "from_type": 2
+                },
+                {
+                    "id": 102350727,
+                    "tag": "本周热播",
+                    "link": "qqmusic://qq.com/ui/similarSongs?p=%7B%22songid%22%3A%22102350727%22%2C%22tagid%22%3A%223044%22%2C%22tagName%22%3A%22%E6%9C%AC%E5%91%A8%E7%83%AD%E6%92%AD%22%7D",
+                    "tagid": 3044,
+                    "from_type": 9
+                },
+                {
+                    "id": 106719244,
+                    "tag": "收藏1w+",
+                    "link": "qqmusic://qq.com/ui/similarSongs?p=%7B%22songid%22%3A%22106719244%22%2C%22tagid%22%3A%223035%22%2C%22tagName%22%3A%22%E6%94%B6%E8%97%8F1w%2B%22%7D",
+                    "tagid": 3035,
+                    "from_type": 9
+                },
+                {
+                    "id": 475408,
+                    "tag": "热歌榜No.60",
+                    "link": "qqmusic://qq.com/ui/toplist?p=%7B%22id%22%3A%2226%22%7D",
+                    "tagid": 26,
+                    "from_type": 2
+                }
+            ],
+            "toplist_song": null,
+            "toplist_nolimit": false,
+            "sac_forbid": null,
+            "birthday": null,
+            "aiExt": {
+                "couple": null,
+                "recommdays": 0,
+                "nextLink": "",
+                "aiSongExt": [],
+                "allListening": 0,
+                "strAllListening": "",
+                "listeningIcon": "",
+                "static_msg": "百万收藏|探索热门旋律",
+                "dynamic_msg": "沿着《爱一点》采集这些热门歌曲",
+                "feedbackURL": "https://c.y.qq.com/r/3Ml0",
+                "CountdownTime": 0,
+                "ISJoinExp": false,
+                "blkCntDnlist": null,
+                "limitVipSongNum": 0,
+                "aiHelperCard": {
+                    "title": "",
+                    "desc_icon": "",
+                    "desc_text": "",
+                    "bubble": "",
+                    "scheme": "",
+                    "aiTag": null
+                }
+            },
+            "vec_songid_newtime": null,
+            "vec_songid_type": null,
+            "vec_ai_extern": null,
+            "recomUgcValid": 0,
+            "quickListenVid": [
+                {
+                    "id": 102698215,
+                    "vid": "0120k5SU3Dr7h3",
+                    "pic": "http://img.tencentmusic.com/T002R720x1280M000001BMDi42baGWa.jpg",
+                    "width": 720,
+                    "height": 1280
+                },
+                {
+                    "id": 5027213,
+                    "vid": "012ALV7t1vVurU",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 7128151,
+                    "vid": "01493VM24Yd35V",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 9478226,
+                    "vid": "010UXGVs33kM1Y",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 101812795,
+                    "vid": "013TlJDE3hquFE",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 102213178,
+                    "vid": "010dk2s44NOKLl",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 102329061,
+                    "vid": "014bjjvj49oEvv",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 130363,
+                    "vid": "010VIFu401Y2d7",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 4830368,
+                    "vid": "012jtxO13l6Gyl",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 1347832,
+                    "vid": "010SM8nM25ZlGr",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 481456,
+                    "vid": "013Kxe262myRAu",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 4830318,
+                    "vid": "013DyMzD3Am5A0",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 4903883,
+                    "vid": "013pQQH21phdrv",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 352949946,
+                    "vid": "0107QfG52JojfV",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 212606866,
+                    "vid": "0138Epsf2A59zN",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 231410654,
+                    "vid": "014ExEYp0qp1dT",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 102343810,
+                    "vid": "010asVkY3zz07P",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 313864471,
+                    "vid": "012wqYIl3rHW1f",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 342963448,
+                    "vid": "014MfVOP4ToRy1",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 350336913,
+                    "vid": "011CxKrD0d2ajB",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 369187156,
+                    "vid": "011QcO2J3RL1jh",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 389976997,
+                    "vid": "0106KsEt0pABax",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 95292,
+                    "vid": "014V9U3o2KVOa6",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 102350727,
+                    "vid": "010QqUcw2AjeGd",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 105792341,
+                    "vid": "010NtWF044mOgt",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 141270,
+                    "vid": "012DsFXk3ooKKs",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 108959744,
+                    "vid": "010gEQAq4Uc4NF",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 1403029,
+                    "vid": "012XW8eg494LBw",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                },
+                {
+                    "id": 475408,
+                    "vid": "010m04nD41cVw1",
+                    "pic": "",
+                    "width": 0,
+                    "height": 0
+                }
+            ],
+            "bitflag": 2,
+            "hasmore": 0
+        }
+    }
+}

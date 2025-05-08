@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, Protocol
+from typing import List, Optional, Protocol, Tuple
 from feeluown.excs import ModelNotFound
 from feeluown.library import (
     AbstractProvider,
@@ -26,10 +26,13 @@ from feeluown.library import (
     SimpleSearchResult,
     SearchType,
     ModelType,
+    UserModel,
 )
 from feeluown.media import Media, Quality
 from feeluown.utils.reader import create_reader, SequentialReader
 from .api import API
+from .login import read_cookies
+from .excs import QQIOError
 
 
 logger = logging.getLogger(__name__)
@@ -78,6 +81,31 @@ class QQProvider(AbstractProvider, ProviderV2):
     @property
     def name(self):
         return "QQ 音乐"
+
+    def auto_login(self):
+        cookies = read_cookies()
+        user, err = self.try_get_user_from_cookies(cookies)
+        if user:
+            self.auth(user)
+        else:
+            logger.info(f'Auto login failed: {err}')
+
+    def try_get_user_from_cookies(self, cookies) -> Tuple[Optional[UserModel], str]:
+        if not cookies:  # is None or empty
+            return None, 'empty cookies'
+
+        uin = provider.api.get_uin_from_cookies(cookies)
+        if uin is None:
+            return None, "can't extract user info from cookies"
+
+        provider.api.set_cookies(cookies)
+        # try to extract current user
+        try:
+            user = provider.user_get(uin)
+        except QQIOError:
+            provider.api.set_cookies(None)
+            return None, 'get user info with cookies failed, expired cookies?'
+        return user, ''
 
     def use_model_v2(self, mtype):
         return mtype in (
@@ -258,6 +286,27 @@ class QQProvider(AbstractProvider, ProviderV2):
             pl["dissname"] = pl["title"]
             pl["logo"] = pl["cover"]
         return [_deserialize(playlist, QQPlaylistSchema) for playlist in playlists]
+
+    def rec_list_daily_songs(self):
+        # TODO: cache API result
+        feed = self.api.get_recommend_feed()
+        card = None
+        for shelf_ in feed['v_shelf']:
+            if 'moduleID' not in shelf_['extra_info']:
+                for batch in shelf_['v_niche']:
+                    for card in batch['v_card']:
+                        if (
+                            card['extra_info'].get('moduleID', '').startswith('recforyou')
+                            and card['jumptype'] == 10014  # 10014->playlist
+                        ):
+                            card = card
+                            break
+        if card is None:
+            logger.warning("No daily songs found")
+            return []
+        playlist_id = card['id']
+        playlist = self.playlist_get(playlist_id)
+        return self.playlist_create_songs_rd(playlist).readall()
 
     def rec_list_daily_playlists(self):
         # TODO: cache API result
