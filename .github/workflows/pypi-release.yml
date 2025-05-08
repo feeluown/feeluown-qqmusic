@@ -14,7 +14,7 @@ jobs:
       with:
         python-version: "3.11"
     - name: Build
-      run: >-
+      run: |
         pip install setuptools build wheel --upgrade --break-system-packages
         python setup.py sdist
         python setup.py bdist_wheel
