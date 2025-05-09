@@ -427,11 +427,11 @@ class QQProvider(AbstractProvider, ProviderV2):
             raise QQIOError(f"Unknown dislike list type: {type}")
 
     def add_to_dislike_list(self, items, type=API.DislikeListType.song):
-        # TODO: convert items from XXXModel to dict
+        # TODO: convert items from list[XXXModel] to list[dict]
         self.api.add_to_dislike_list(items, type)
 
     def remove_from_dislike_list(self, items, type=API.DislikeListType.song):
-        # TODO: convert items from XXXModel to dict
+        # TODO: convert items from list[XXXModel] to list[dict]
         self.api.remove_from_dislike_list(items, type)
 
 

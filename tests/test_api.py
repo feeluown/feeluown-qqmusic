@@ -1,4 +1,5 @@
 from fuo_qqmusic.api import API
+import pytest
 
 
 def parse_cookie_to_dict(cookie_str):
@@ -30,7 +31,7 @@ def parse_cookie_to_dict(cookie_str):
 
 cookie_str = "Your cookie string here"
 
-
+@pytest.mark.skip(reason="need valid cookies")
 def test_api():
     api = API()
     api.set_cookies(parse_cookie_to_dict(cookie_str))
