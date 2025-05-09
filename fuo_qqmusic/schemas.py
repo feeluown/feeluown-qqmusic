@@ -357,3 +357,34 @@ class SearchMVSchema(Schema):
     @post_load
     def create_model(self, data, **kwargs):
         return create_model(VideoModel, data)
+
+class DislikeListSongSchema(Schema):
+    """
+    不喜欢列表（下称“黑名单”）中的一首歌曲。
+    可选字段在 API 返回值中总是提供，但增删列表时无需提供这些字段。
+    """
+    identifier = fields.Str(data_key="ID", required=True)
+    title = fields.Str(data_key="Name", required=True)
+    cover = fields.Str(data_key="Img", required=False)
+    id_type = fields.Int(data_key="IdType", required=True) # 歌曲 identifier 的类型，一般填 0 即可
+    add_time = fields.Int(data_key="Time", required=False)
+
+    @post_load
+    def create_model(self, data, **kwargs):
+        raise NotImplementedError
+
+
+class DislikeListSingerSchema(Schema):
+    """
+    不喜欢列表（下称“黑名单”）中的一位歌手。
+    可选字段在 API 返回值中总是提供，但增删列表时无需提供这些字段。
+    """
+    identifier = fields.Str(data_key="ID", required=True)
+    name = fields.Str(data_key="Name", required=True)
+    cover = fields.Str(data_key="Img", required=False)
+    id_type = fields.Int(data_key="IdType", required=True) # 同上
+    add_time = fields.Int(data_key="Time", required=False)
+
+    @post_load
+    def create_model(self, data, **kwargs):
+        raise NotImplementedError

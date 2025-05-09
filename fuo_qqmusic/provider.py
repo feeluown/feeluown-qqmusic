@@ -417,6 +417,23 @@ class QQProvider(AbstractProvider, ProviderV2):
         data_songs = self.api.song_similar(int(song.identifier))
         return [_deserialize(data_song, QQSongSchema) for data_song in data_songs]
 
+    def get_dislike_list(self, page=1, type=API.DislikeListType.song, last_id=0):
+        items = self.api.get_dislike_list(page, type, last_id)
+        if type == API.DislikeListType.song:
+            return [_deserialize(item, DislikeListSongSchema) for item in items]
+        elif type == API.DislikeListType.singer:
+            return [_deserialize(item, DislikeListSingerSchema) for item in items]
+        else:
+            raise QQIOError(f"Unknown dislike list type: {type}")
+
+    def add_to_dislike_list(self, items, type=API.DislikeListType.song):
+        # TODO: convert items from XXXModel to dict
+        self.api.add_to_dislike_list(items, type)
+
+    def remove_from_dislike_list(self, items, type=API.DislikeListType.song):
+        # TODO: convert items from XXXModel to dict
+        self.api.remove_from_dislike_list(items, type)
+
 
 def _deserialize(data, schema_cls):
     schema = schema_cls()
@@ -493,4 +510,6 @@ from .schemas import (  # noqa
     SearchArtistSchema,
     SearchPlaylistSchema,
     SearchMVSchema,
+    DislikeListSongSchema,
+    DislikeListSingerSchema,
 )  # noqa
