@@ -723,145 +723,80 @@ class API(object):
         song = 3
         _style_unsupported = 4 # TODO: 这是什么？似乎是不喜欢的风格列表，不确定，暂时不支持
 
-    def get_dislike_list(self, page=1, type=DislikeListType.song, last_id=0):
-        uin = self._uin
-
-        data = {
-            "comm": {
-                "g_tk": int(self.get_token_from_cookies()),  # NOTE: 需要是整数，下同
-                "uin": int(uin),  # NOTE: 需要是整数，下同
-                "format": "json",
-                "inCharset": "utf-8",
-                "outCharset": "utf-8",
-                "notice": 0,
-                "platform": "h5",
-            },
+    def get_dislike_list(self, page=1, type_=DislikeListType.song, last_id=0):
+        payload = {
             "req_0": {
                 "module": "music.feedback.FeedbackBlack",
                 "method": "GetDislikeList",
                 "param": {
-                    "Cmd": type.value,
+                    "Cmd": type_.value,
                     "Page": page,
-                    "SongLastid": last_id if type == API.DislikeListType.song else 0,
+                    "SongLastid": last_id if type_ == API.DislikeListType.song else 0,
                     "SingersLastid": (
-                        last_id if type == API.DislikeListType.singer else 0
+                        last_id if type_ == API.DislikeListType.singer else 0
                     ),
                 },
             },
         }
-        data_str = json.dumps(data, ensure_ascii=False)
-        params = {
-            "_": int(round(time.time() * 1000)),
-            "sign": _get_sign(data_str),
-            "_webcgikey": "GetDislikeList",
-        }
-
-        url = "https://u6.y.qq.com/cgi-bin/musics.fcg"
-        resp = requests.post(url, params=params,
-            data=data_str, headers=self._headers, cookies=self._cookies)
-        js = resp.json()
-        CodeShouldBe0.check(js)
-
-        if type == API.DislikeListType.song:
+        js = self.rpc(payload)
+        if type_ == API.DislikeListType.song:
             return js["req_0"]["data"]["Songs"]
-        elif type == API.DislikeListType.singer:
+        elif type_ == API.DislikeListType.singer:
             return js["req_0"]["data"]["Singers"]
         else:
-            raise QQIOError(f"Unknown dislike list type: {type}")
+            raise QQIOError(f"Unknown dislike list type: {type_}")
 
-    def add_to_dislike_list(self, items, type=DislikeListType.song):
-        uin = self._uin
-
+    def add_to_dislike_list(self, items, type_=DislikeListType.song):
         req_param = {
             "Singers": [],
             "Songs": [],
             "Styles": [],
             "OnlyAdd": 1,
         }
-        if type == API.DislikeListType.song:
+        if type_ == API.DislikeListType.song:
             req_param["Songs"] = items
-        elif type == API.DislikeListType.singer:
+        elif type_ == API.DislikeListType.singer:
             req_param["Singers"] = items
         else:
-            raise QQIOError(f"Unknown dislike list type: {type}")
+            raise QQIOError(f"Unknown dislike list type: {type_}")
 
-        data = {
-            "comm": {
-                "g_tk": int(self.get_token_from_cookies()),
-                "uin": int(uin),
-                "format": "json",
-                "inCharset": "utf-8",
-                "outCharset": "utf-8",
-                "notice": 0,
-                "platform": "h5",
-                "needNewCode": 1,
-                "ct": 23,
-                "cv": 0,
-            },
-            "req_0": {
-                "module": "music.feedback.FeedbackBlack",
-                "method": "AddDislike",
-                "param": req_param,
-            },
+        payload = {
+             "req_0": {
+                 "module": "music.feedback.FeedbackBlack",
+                 "method": "AddDislike",
+                 "param": req_param,
+             },
         }
-        data_str = json.dumps(data, ensure_ascii=False)
-        params = {
-            "_": int(round(time.time() * 1000)),
-            "sign": _get_sign(data_str),
-            "_webcgikey": "AddDislike",
-        }
+        js = self.rpc(payload)
+        # Response example, {'code': 0, 'data': {'Retcode': 0, 'Msg': '', 'Token': ''}}
+        CodeShouldBe0.check(js['req_0'])
+        return js['req_0']['data']
 
-        url = "https://u6.y.qq.com/cgi-bin/musics.fcg"
-        resp = requests.post(url, params=params,
-            data=data_str, headers=self._headers, cookies=self._cookies)
-        js = resp.json()
-        CodeShouldBe0.check(js)
-
-    def remove_from_dislike_list(self, items, type=DislikeListType.song):
-        uin = self._uin
-
+    def remove_from_dislike_list(self, items, type_=DislikeListType.song):
         req_param = {
             "Singers": [],
             "Songs": [],
             "Styles": [],
             "OnlyAdd": 0,
         }
-        if type == API.DislikeListType.song:
+        if type_ == API.DislikeListType.song:
             req_param["Songs"] = items
-        elif type == API.DislikeListType.singer:
+        elif type_ == API.DislikeListType.singer:
             req_param["Singers"] = items
         else:
-            raise QQIOError(f"Unknown dislike list type: {type}")
+            raise QQIOError(f"Unknown dislike list type: {type_}")
 
-        data = {
-            "comm": {
-                "g_tk": int(self.get_token_from_cookies()),
-                "uin": int(uin),
-                "format": "json",
-                "inCharset": "utf-8",
-                "outCharset": "utf-8",
-                "notice": 0,
-                "platform": "h5",
-                "needNewCode": 1,
-            },
+        payload = {
             "req_0": {
                 "module": "music.feedback.FeedbackBlack",
                 "method": "CancelDislike",
                 "param": req_param,
             },
         }
-        data_str = json.dumps(data, ensure_ascii=False)
-        params = {
-            "_": int(round(time.time() * 1000)),
-            "sign": _get_sign(data_str),
-            "_webcgikey": "CancelDislike",
-        }
-
-        url = "https://u6.y.qq.com/cgi-bin/musics.fcg"
-        resp = requests.post(url, params=params,
-            data=data_str, headers=self._headers, cookies=self._cookies)
-        js = resp.json()
+        js = self.rpc(payload)
         CodeShouldBe0.check(js)
+        CodeShouldBe0.check(js['req_0'])
+        return js['req_0']['data']
 
 
 api = API()
