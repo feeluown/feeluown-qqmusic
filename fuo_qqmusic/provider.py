@@ -23,12 +23,17 @@ from feeluown.library import (
     SupportsPlaylistGet,
     SupportsPlaylistSongsReader,
     SupportsRecACollectionOfSongs,
+    SupportsCurrentUserDislikeSongsReader,
+    SupportsCurrentUserDislikeAddSong,
+    SupportsCurrentUserDislikeRemoveSong,
+    SupportsCurrentUserChanged,
     SimpleSearchResult,
     SearchType,
     ModelType,
     UserModel,
 )
 from feeluown.media import Media, Quality
+from feeluown.utils.dispatch import Signal
 from feeluown.utils.reader import create_reader, SequentialReader
 from .api import API
 from .login import read_cookies
@@ -53,6 +58,9 @@ class Supports(
     SupportsPlaylistSongsReader,
     SupportsRecACollectionOfSongs,
     SupportsAlbumSongsReader,
+    SupportsCurrentUserDislikeSongsReader,
+    SupportsCurrentUserDislikeAddSong,
+    SupportsCurrentUserDislikeRemoveSong,
     Protocol,
 ):
     pass
@@ -70,6 +78,7 @@ class QQProvider(AbstractProvider, ProviderV2):
     def __init__(self):
         super().__init__()
         self.api = API()
+        self.current_user_changed = Signal()
 
     def _(self) -> Supports:
         return self
@@ -89,6 +98,7 @@ class QQProvider(AbstractProvider, ProviderV2):
             self.auth(user)
         else:
             logger.info(f'Auto login failed: {err}')
+        self.current_user_changed.emit(user)
 
     def try_get_user_from_cookies(self, cookies) -> Tuple[Optional[UserModel], str]:
         if not cookies:  # is None or empty
@@ -417,22 +427,34 @@ class QQProvider(AbstractProvider, ProviderV2):
         data_songs = self.api.song_similar(int(song.identifier))
         return [_deserialize(data_song, QQSongSchema) for data_song in data_songs]
 
-    def get_dislike_list(self, page=1, type=API.DislikeListType.song, last_id=0):
-        items = self.api.get_dislike_list(page, type, last_id)
-        if type == API.DislikeListType.song:
-            return [_deserialize(item, DislikeListSongSchema) for item in items]
-        elif type == API.DislikeListType.singer:
-            return [_deserialize(item, DislikeListSingerSchema) for item in items]
-        else:
-            raise QQIOError(f"Unknown dislike list type: {type}")
+    def current_user_dislike_create_songs_rd(self):
+        user = self.get_current_user()
+        if user is None:
+            return create_reader([])
+        # FIXME: 如果用户的黑名单歌曲数量较多的话，这样处理则是不够的
+        items = self.api.get_dislike_list(1, API.DislikeListType.song, 0)
+        songs = []
+        for item in items:
+            name = item['Name']
+            title, artists_name = name.split(' - ')
+            song = BriefSongModel(
+                source=SOURCE,
+                identifier=item['ID'],
+                title=title,
+                artists_name=artists_name,
+            )
+            songs.append(song)
+        return create_reader(songs)
 
-    def add_to_dislike_list(self, items, type=API.DislikeListType.song):
-        # TODO: convert items from list[XXXModel] to list[dict]
-        self.api.add_to_dislike_list(items, type)
+    def current_user_dislike_add_song(self, song):
+        items = [{'ID': song.identifier}]
+        js = self.api.add_to_dislike_list(items, API.DislikeListType.song)
+        return js.get('Retcode') == 0
 
-    def remove_from_dislike_list(self, items, type=API.DislikeListType.song):
-        # TODO: convert items from list[XXXModel] to list[dict]
-        self.api.remove_from_dislike_list(items, type)
+    def current_user_dislike_remove_song(self, song):
+        items = [{'ID': song.identifier}]
+        js = self.api.remove_from_dislike_list(items, API.DislikeListType.song)
+        return js.get('Retcode') == 0
 
 
 def _deserialize(data, schema_cls):
