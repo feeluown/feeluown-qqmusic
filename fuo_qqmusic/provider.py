@@ -532,6 +532,4 @@ from .schemas import (  # noqa
     SearchArtistSchema,
     SearchPlaylistSchema,
     SearchMVSchema,
-    DislikeListSongSchema,
-    DislikeListSingerSchema,
 )  # noqa
