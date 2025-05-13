@@ -8,6 +8,7 @@ import math
 import json
 import random
 import time
+from enum import Enum
 
 import requests
 from .excs import QQIOError
@@ -716,6 +717,86 @@ class API(object):
         if midurlinfo and midurlinfo[0]['purl']:
             return 'http://isure.stream.qqmusic.qq.com/{}'.format(midurlinfo[0]['purl'])
         return ''
+
+    class DislikeListType(Enum):
+        singer = 2
+        song = 3
+        _style_unsupported = 4 # TODO: 这是什么？似乎是不喜欢的风格列表，不确定，暂时不支持
+
+    def get_dislike_list(self, page=1, type_=DislikeListType.song, last_id=0):
+        payload = {
+            "req_0": {
+                "module": "music.feedback.FeedbackBlack",
+                "method": "GetDislikeList",
+                "param": {
+                    "Cmd": type_.value,
+                    "Page": page,
+                    "SongLastid": last_id if type_ == API.DislikeListType.song else 0,
+                    "SingersLastid": (
+                        last_id if type_ == API.DislikeListType.singer else 0
+                    ),
+                },
+            },
+        }
+        js = self.rpc(payload)
+        if type_ == API.DislikeListType.song:
+            return js["req_0"]["data"]["Songs"]
+        elif type_ == API.DislikeListType.singer:
+            return js["req_0"]["data"]["Singers"]
+        else:
+            raise QQIOError(f"Unknown dislike list type: {type_}")
+
+    def add_to_dislike_list(self, items, type_=DislikeListType.song):
+        req_param = {
+            "Singers": [],
+            "Songs": [],
+            "Styles": [],
+            "OnlyAdd": 1,
+        }
+        if type_ == API.DislikeListType.song:
+            req_param["Songs"] = items
+        elif type_ == API.DislikeListType.singer:
+            req_param["Singers"] = items
+        else:
+            raise QQIOError(f"Unknown dislike list type: {type_}")
+
+        payload = {
+             "req_0": {
+                 "module": "music.feedback.FeedbackBlack",
+                 "method": "AddDislike",
+                 "param": req_param,
+             },
+        }
+        js = self.rpc(payload)
+        # Response example, {'code': 0, 'data': {'Retcode': 0, 'Msg': '', 'Token': ''}}
+        CodeShouldBe0.check(js['req_0'])
+        return js['req_0']['data']
+
+    def remove_from_dislike_list(self, items, type_=DislikeListType.song):
+        req_param = {
+            "Singers": [],
+            "Songs": [],
+            "Styles": [],
+            "OnlyAdd": 0,
+        }
+        if type_ == API.DislikeListType.song:
+            req_param["Songs"] = items
+        elif type_ == API.DislikeListType.singer:
+            req_param["Singers"] = items
+        else:
+            raise QQIOError(f"Unknown dislike list type: {type_}")
+
+        payload = {
+            "req_0": {
+                "module": "music.feedback.FeedbackBlack",
+                "method": "CancelDislike",
+                "param": req_param,
+            },
+        }
+        js = self.rpc(payload)
+        CodeShouldBe0.check(js)
+        CodeShouldBe0.check(js['req_0'])
+        return js['req_0']['data']
 
 
 api = API()
