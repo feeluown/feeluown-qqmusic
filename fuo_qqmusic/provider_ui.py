@@ -39,8 +39,9 @@ class ProviderUI(AbstractProviderUi):
             #
             #    - keys: ['skey']
             url = os.getenv('FUO_QQMUSIC_LOGIN_URL', 'https://y.qq.com')
-            keys = os.getenv('FUO_QQMUSIC_LOGIN_COOKIE_KEYS', 'qqmusic_key').split(',')
-            self._dialog = LoginDialog(url, keys)
+            keys_str = os.getenv('FUO_QQMUSIC_LOGIN_COOKIE_KEYS',
+                                 'qqmusic_key,wxuin|qqmusic_key,uin')
+            self._dialog = LoginDialog(url, [keys.split(',') for keys in keys_str.split('|')])
             self._dialog.login_succeed.connect(self.on_login_succeed)
             self._dialog.show()
             self._dialog.autologin()
