@@ -20,6 +20,9 @@ pip3 install fuo-qqmusic
 [操作示例](https://github.com/feeluown/feeluown-qqmusic/issues/6)。
 
 ## changelog
+### 1.0.7 (2025-05-31)
+- 支持音乐黑名单
+
 ### 1.0.6 (2025-05-08)
 - 支持每日推荐
 - 支持自动登录
