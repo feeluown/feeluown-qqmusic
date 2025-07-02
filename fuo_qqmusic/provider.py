@@ -4,6 +4,7 @@ from feeluown.excs import ModelNotFound
 from feeluown.library import (
     AbstractProvider,
     BriefSongModel,
+    BriefPlaylistModel,
     PlaylistModel,
     Collection,
     CollectionType,
@@ -280,6 +281,22 @@ class QQProvider(AbstractProvider, ProviderV2):
         data = self.api.playlist_detail(int(identifier), limit=1000)
         return _deserialize(data, QQPlaylistSchema)
 
+    def playlist_add_song(self, playlist, song):
+        # FIXME: 目前 playlist 相关接口用的都是 diss 结构体，而这里需要一个 dirid。
+        # 平台方也提供了 dir 相关的接口，我大胆猜测，diss 是一套老接口。
+        playlist._cache.pop("songs", None)
+        dirid = self._get_dirid_by_playlist_id(playlist.identifier)
+        return self.api.playlist_add_songs(dirid, [song.identifier])
+
+    def playlist_remove_song(self, playlist, song):
+        playlist._cache.pop("songs", None)
+        dirid = self._get_dirid_by_playlist_id(playlist.identifier)
+        return self.api.playlist_remove_songs(dirid, [song.identifier])
+
+    def _get_dirid_by_playlist_id(self, playlist_id):
+        data = self.api.playlist_detail(int(playlist_id), limit=1)
+        return data["dirid"]
+
     def playlist_create_songs_rd(self, playlist):
         songs = self._model_cache_get_or_fetch(playlist, "songs")
         return create_reader(songs)
@@ -381,7 +398,13 @@ class QQProvider(AbstractProvider, ProviderV2):
         if user is None:
             return []
         playlists = self._model_cache_get_or_fetch(user, "playlists")
-        return playlists
+        fav_pid = self._model_cache_get_or_fetch(user, "fav_pid")
+        my_love = BriefPlaylistModel(
+            source=SOURCE,
+            identifier=str(fav_pid),
+            name='我喜欢'
+        )
+        return [my_love] + playlists
 
     def current_user_fav_create_songs_rd(self):
         user = self.get_current_user()
@@ -415,6 +438,9 @@ class QQProvider(AbstractProvider, ProviderV2):
             return create_reader([])
         mid = self._model_cache_get_or_fetch(user, "mid")
         playlists = self.api.user_favorite_playlists(user.identifier, mid)
+        # HACK: 给 playlist 加一个 disstid 字段，这样可以兼容 QQPlaylistSchema
+        for playlist in playlists:
+            playlist["disstid"] = playlist["dissid"]
         return [_deserialize(playlist, QQPlaylistSchema) for playlist in playlists]
 
     def has_current_user(self):

@@ -287,6 +287,34 @@ class API(object):
         resp = requests.get(url, params=params)
         return resp.json()['data']
 
+    def playlist_remove_songs(self, playlist_id, song_id_list):
+        payload = {
+            'req_0': {
+                'method': 'DelSonglist',
+                'module': 'music.musicasset.PlaylistDetailWrite',
+                'param': {
+                    'dirId': playlist_id,  # int
+                    'v_songInfo': [{'songId': int(song_id), 'songType': 0} for song_id in song_id_list]
+                }
+            }
+        }
+        js = self.rpc(payload)
+        return js['req_0']['code'] == 0
+
+    def playlist_add_songs(self, playlist_id, song_id_list):
+        payload = {
+            'req_0': {
+                'method': 'AddSonglist',
+                'module': 'music.musicasset.PlaylistDetailWrite',
+                'param': {
+                    'dirId': int(playlist_id),  # int
+                    'v_songInfo': [{'songId': int(song_id), 'songType': 0} for song_id in song_id_list]
+                }
+            }
+        }
+        js = self.rpc(payload)
+        return js['req_0']['code'] == 0
+
     def playlist_detail(self, pid, offset=0, limit=50):
         url = api_base_url + '/qzone/fcg-bin/fcg_ucc_getcdinfo_byids_cp.fcg'
         params = {
@@ -319,6 +347,7 @@ class API(object):
         resp = requests.get(url, params=params, headers=self._headers,
                             cookies=self._cookies, timeout=self._timeout)
         js = resp.json()
+        logger.debug(f"user detail response: {js}")
         if js['code'] != 0:
             raise CodeShouldBe0(js)
         return js['data']
@@ -438,6 +467,7 @@ class API(object):
     def rpc(self, payload):
         if 'comm' not in payload:
             payload['comm'] = self.get_common_params()
+        logger.debug(f"rpc payload: {payload}")
         data_str = json.dumps(payload, ensure_ascii=False)
         params = {
             '_': int(round(time.time() * 1000)),
@@ -448,6 +478,7 @@ class API(object):
         resp = requests.get(url, params=params, headers=self._headers,
                             cookies=self._cookies, timeout=self._timeout)
         js = resp.json()
+        logger.debug(f"rpc response json: {js}")
         CodeShouldBe0.check(js)
         return js
 

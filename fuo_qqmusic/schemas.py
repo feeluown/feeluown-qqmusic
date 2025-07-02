@@ -271,7 +271,7 @@ class QQAlbumSchema(Schema):
 
 
 class QQPlaylistSchema(Schema):
-    identifier = fields.Int(required=True, data_key="dissid")
+    identifier = fields.Int(required=True, data_key="disstid")
     name = fields.Str(required=True, data_key="dissname")
     cover = fields.Str(required=True, data_key="logo")
     # songs field maybe null, though it can't be null in model
