@@ -20,6 +20,10 @@ pip3 install fuo-qqmusic
 [操作示例](https://github.com/feeluown/feeluown-qqmusic/issues/6)。
 
 ## changelog
+### 1.0.8 (2025-07-03)
+- 增强 web 登录可靠性
+- 歌单支持添加/删除歌曲
+
 ### 1.0.7 (2025-05-31)
 - 支持音乐黑名单
 
