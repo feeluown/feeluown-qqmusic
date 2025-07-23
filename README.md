@@ -20,6 +20,9 @@ pip3 install fuo-qqmusic
 [操作示例](https://github.com/feeluown/feeluown-qqmusic/issues/6)。
 
 ## changelog
+### 1.0.9 (2025-07-24)
+- 增加“重新登录”按钮（仅 FeelUOwn>=4.1.14 可用）
+
 ### 1.0.8 (2025-07-03)
 - 增强 web 登录可靠性
 - 歌单支持添加/删除歌曲
