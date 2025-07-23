@@ -1,16 +1,15 @@
-import json
 import logging
 import os
 
+from PyQt5.QtWidgets import QMenu
+
 from feeluown.utils.dispatch import Signal
 from feeluown.utils.aio import run_fn
-from feeluown.consts import DATA_DIR
 from feeluown.gui.widgets.login import CookiesLoginDialog, InvalidCookies
 from feeluown.gui.provider_ui import AbstractProviderUi
 from feeluown.app.gui_app import GuiApp
 
 from .provider import provider
-from .excs import QQIOError
 from .login import read_cookies, write_cookies
 
 logger = logging.getLogger(__name__)
@@ -29,7 +28,7 @@ class ProviderUI(AbstractProviderUi):
         return os.path.join(os.path.dirname(__file__), 'assets', 'icon.svg')
 
     def login_or_go_home(self):
-        if provider._user is None:
+        if not provider.has_current_user():
             # According to #14, we have two ways to login:
             # 1. the default way, as the code shows
             # 2. a way for VIP user(maybe):
@@ -53,9 +52,18 @@ class ProviderUI(AbstractProviderUi):
     def login_event(self):
         return self._login_event
 
+    def context_menu_add_items(self, menu: QMenu):
+        action = menu.addAction('重新登录')
+        action.triggered.connect(self._re_login)
+
     def on_login_succeed(self):
         del self._dialog
         self.login_event.emit(self, 1)
+
+    def _re_login(self):
+        provider.auth(None)
+        self.login_or_go_home()
+
 
 
 class LoginDialog(CookiesLoginDialog):
