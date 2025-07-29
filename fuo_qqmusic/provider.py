@@ -183,7 +183,7 @@ class QQProvider(AbstractProvider, ProviderV2):
         return Media(q_media_mapping[quality.value])
 
     def video_list_quality(self, video):
-        q_media_mapping = self._model_cache_get_or_fetch(video, "q_url_mapping")
+        q_media_mapping = self._model_cache_get_or_fetch(video, "q_url_mapping", ttl=3600)
         return [Quality.Video(k) for k, v in q_media_mapping.items() if v]
 
     def song_list_quality(self, song) -> List[Quality.Audio]:
@@ -223,9 +223,11 @@ class QQProvider(AbstractProvider, ProviderV2):
         q_media_mapping, exists = song.cache_get("q_media_mapping")
         if exists is True:
             return q_media_mapping
-        quality_suffix = self._model_cache_get_or_fetch(song, "quality_suffix")
-        mid = self._model_cache_get_or_fetch(song, "mid")
-        media_id = self._model_cache_get_or_fetch(song, "media_id")
+        # 根据过去经验，这个东西一段时间之后会过期。
+        # 具体多久，不是很清楚。
+        quality_suffix = self._model_cache_get_or_fetch(song, "quality_suffix", ttl=3600)
+        mid = self._model_cache_get_or_fetch(song, "mid", ttl=3600)
+        media_id = self._model_cache_get_or_fetch(song, "media_id", ttl=3600)
         q_media_mapping = {}
         # 注：self.quality_suffix 这里可能会触发一次网络请求
         for idx, (q, t, b, s) in enumerate(quality_suffix):
