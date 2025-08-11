@@ -20,7 +20,10 @@ pip3 install fuo-qqmusic
 [操作示例](https://github.com/feeluown/feeluown-qqmusic/issues/6)。
 
 ## changelog
-### 1.1.10 (2025-07-29)
+### 1.0.11 (2025-08-12)
+- 尝试修复wx登录有时会失败的问题
+
+### 1.0.10 (2025-07-29)
 - 修复歌曲链接会失效的问题（仅 FeelUOwn>=4.1.14 可用）
 
 ### 1.0.9 (2025-07-24)
