@@ -3,11 +3,14 @@ from typing import List, Optional, Protocol, Tuple
 from feeluown.excs import ModelNotFound
 from feeluown.library import (
     AbstractProvider,
+    BriefCommentModel,
     BriefSongModel,
     BriefPlaylistModel,
+    BriefUserModel,
     PlaylistModel,
     Collection,
     CollectionType,
+    CommentModel,
     ProviderV2,
     ProviderFlags as PF,
     SupportsSongGet,
@@ -30,6 +33,7 @@ from feeluown.library import (
     SupportsCurrentUserChanged,
     SimpleSearchResult,
     SearchType,
+    ModelState,
     ModelType,
     UserModel,
 )
@@ -193,6 +197,32 @@ class QQProvider(AbstractProvider, ProviderV2):
         must not return None with a valid quality.
         """
         return list(self._song_get_q_media_mapping(song))
+    
+    def song_list_hot_comments(self, song):
+        logger.info(f'Fetching hot comments for song: {song.title}({song.identifier})')
+        data = self.api.get_comment(song.identifier)
+        hot_comments_data = data["hot_comment"]["commentlist"]
+        hot_comments = []
+        for comment_data in hot_comments_data:
+            user = BriefUserModel(
+                identifier='',
+                source=SOURCE,
+                name=comment_data['nick'],
+                state=ModelState.not_exists,
+            )
+            comment = CommentModel(
+                identifier=str(comment_data["commentid"]),
+                source=SOURCE,
+                user=user,
+                content=comment_data["rootcommentcontent"],
+                liked_count=comment_data["praisenum"],
+                time=comment_data["time"],
+                parent=None,
+                root_comment_id=str(comment_data["rootcommentcontent"])
+            )
+            hot_comments.append(comment)
+        return hot_comments
+
 
     def song_get_media(self, song, quality: Quality.Audio) -> Optional[Media]:
         """Get song's media by a specified quality
