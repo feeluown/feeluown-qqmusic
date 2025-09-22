@@ -17,6 +17,14 @@ logger = logging.getLogger(__name__)
 
 api_base_url = 'http://c.y.qq.com'
 
+class CodeShouldBe200(QQIOError):
+    def __init__(self, data):
+        self._code = data['code']
+        self._data = data
+
+    def __str__(self):
+        return f'json code field should be 200, got {self._code}. data: {self._data}'
+
 
 def djb2(string):
     ''' Hash a word using the djb2 algorithm with the specified base. '''
@@ -449,6 +457,13 @@ class API(object):
         }
         js = self.rpc(data)
         return js['req_0']['data']
+    
+    def get_comment(self, comment_id):
+        url = api_base_url + f'/base/fcgi-bin/fcg_global_comment_h5.fcg?biztype=1&cmd=8&topid={comment_id}&pagenum=0&pagesize=25'
+        res_data = requests.get(url, headers=self._headers)
+        if res_data.status_code == 200:
+            return res_data.json()
+        raise CodeShouldBe200(res_data)
 
     def get_lyric_by_songmid(self, songmid):
         url = api_base_url + '/lyric/fcgi-bin/fcg_query_lyric_new.fcg'
