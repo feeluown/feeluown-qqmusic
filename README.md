@@ -20,6 +20,9 @@ pip3 install fuo-qqmusic
 [操作示例](https://github.com/feeluown/feeluown-qqmusic/issues/6)。
 
 ## changelog
+### 1.0.12 (2025-09-22)
+- 支持展示歌曲评论
+
 ### 1.0.11 (2025-08-12)
 - 尝试修复wx登录有时会失败的问题
 
