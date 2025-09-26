@@ -20,6 +20,9 @@ pip3 install fuo-qqmusic
 [操作示例](https://github.com/feeluown/feeluown-qqmusic/issues/6)。
 
 ## changelog
+### 1.0.13 (2025-09-26)
+- 移除对 PyQt5 的依赖
+
 ### 1.0.12 (2025-09-22)
 - 支持展示歌曲评论
 
