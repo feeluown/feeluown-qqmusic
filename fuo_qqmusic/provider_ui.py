@@ -1,8 +1,6 @@
 import logging
 import os
 
-from PyQt5.QtWidgets import QMenu
-
 from feeluown.utils.dispatch import Signal
 from feeluown.utils.aio import run_fn
 from feeluown.gui.widgets.login import CookiesLoginDialog, InvalidCookies
@@ -71,7 +69,7 @@ class ProviderUI(AbstractProviderUi):
     def login_event(self):
         return self._login_event
 
-    def context_menu_add_items(self, menu: QMenu):
+    def context_menu_add_items(self, menu):
         action = menu.addAction('重新登录')
         action.triggered.connect(self._re_login)
 
