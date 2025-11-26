@@ -20,6 +20,9 @@ pip3 install fuo-qqmusic
 [操作示例](https://github.com/feeluown/feeluown-qqmusic/issues/6)。
 
 ## changelog
+### 1.0.14 (2025-11-27)
+- 尝试修复 url 过期的问题
+
 ### 1.0.13 (2025-09-26)
 - 移除对 PyQt5 的依赖
 
