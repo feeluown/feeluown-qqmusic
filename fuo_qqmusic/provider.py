@@ -72,6 +72,7 @@ class Supports(
 
 
 class QQProvider(AbstractProvider, ProviderV2):
+
     class meta:
         identifier = "qqmusic"
         name = "QQ 音乐"
@@ -105,7 +106,8 @@ class QQProvider(AbstractProvider, ProviderV2):
             logger.info(f'Auto login failed: {err}')
         self.current_user_changed.emit(user)
 
-    def try_get_user_from_cookies(self, cookies) -> Tuple[Optional[UserModel], str]:
+    def try_get_user_from_cookies(self,
+                                  cookies) -> Tuple[Optional[UserModel], str]:
         if not cookies:  # is None or empty
             return None, 'empty cookies'
 
@@ -169,7 +171,8 @@ class QQProvider(AbstractProvider, ProviderV2):
             elif file_type == 0:
                 pass
             else:
-                logger.warning("There exists another quality:%s mv.", str(file_type))
+                logger.warning("There exists another quality:%s mv.",
+                               str(file_type))
         q_url_mapping = dict(fhd=fhd, hd=hd, sd=sd, ld=ld)
         video = VideoModel(
             identifier=identifier,
@@ -179,15 +182,19 @@ class QQProvider(AbstractProvider, ProviderV2):
             duration=1,
             cover="",
         )
-        video.cache_set("q_url_mapping", q_url_mapping)
+        video.cache_set("q_url_mapping", q_url_mapping, ttl=3600)
         return video
 
     def video_get_media(self, video, quality):
-        q_media_mapping = self._model_cache_get_or_fetch(video, "q_url_mapping")
+        q_media_mapping = self._model_cache_get_or_fetch(video,
+                                                         "q_url_mapping",
+                                                         ttl=3600)
         return Media(q_media_mapping[quality.value])
 
     def video_list_quality(self, video):
-        q_media_mapping = self._model_cache_get_or_fetch(video, "q_url_mapping", ttl=3600)
+        q_media_mapping = self._model_cache_get_or_fetch(video,
+                                                         "q_url_mapping",
+                                                         ttl=3600)
         return [Quality.Video(k) for k, v in q_media_mapping.items() if v]
 
     def song_list_quality(self, song) -> List[Quality.Audio]:
@@ -197,9 +204,10 @@ class QQProvider(AbstractProvider, ProviderV2):
         must not return None with a valid quality.
         """
         return list(self._song_get_q_media_mapping(song))
-    
+
     def song_list_hot_comments(self, song):
-        logger.info(f'Fetching hot comments for song: {song.title}({song.identifier})')
+        logger.info(
+            f'Fetching hot comments for song: {song.title}({song.identifier})')
         data = self.api.get_comment(song.identifier)
         hot_comments_data = data["hot_comment"]["commentlist"]
         hot_comments = []
@@ -210,19 +218,17 @@ class QQProvider(AbstractProvider, ProviderV2):
                 name=comment_data['nick'],
                 state=ModelState.not_exists,
             )
-            comment = CommentModel(
-                identifier=str(comment_data["commentid"]),
-                source=SOURCE,
-                user=user,
-                content=comment_data["rootcommentcontent"],
-                liked_count=comment_data["praisenum"],
-                time=comment_data["time"],
-                parent=None,
-                root_comment_id=str(comment_data["rootcommentcontent"])
-            )
+            comment = CommentModel(identifier=str(comment_data["commentid"]),
+                                   source=SOURCE,
+                                   user=user,
+                                   content=comment_data["rootcommentcontent"],
+                                   liked_count=comment_data["praisenum"],
+                                   time=comment_data["time"],
+                                   parent=None,
+                                   root_comment_id=str(
+                                       comment_data["rootcommentcontent"]))
             hot_comments.append(comment)
         return hot_comments
-
 
     def song_get_media(self, song, quality: Quality.Audio) -> Optional[Media]:
         """Get song's media by a specified quality
@@ -253,25 +259,28 @@ class QQProvider(AbstractProvider, ProviderV2):
         q_media_mapping, exists = song.cache_get("q_media_mapping")
         if exists is True:
             return q_media_mapping
-        # 根据过去经验，这个东西一段时间之后会过期。
-        # 具体多久，不是很清楚。
-        quality_suffix = self._model_cache_get_or_fetch(song, "quality_suffix", ttl=3600)
-        mid = self._model_cache_get_or_fetch(song, "mid", ttl=3600)
-        media_id = self._model_cache_get_or_fetch(song, "media_id", ttl=3600)
+        # FIXME: 三个字段应该合并成一个字段。现在看这三行代码，就很疑惑，
+        # 并且容易担心会触发三个请求。而这三个字段其实可以一次性拿到。
+        quality_suffix = self._model_cache_get_or_fetch(song, "quality_suffix")
+        mid = self._model_cache_get_or_fetch(song, "mid")
+        media_id = self._model_cache_get_or_fetch(song, "media_id")
         q_media_mapping = {}
         # 注：self.quality_suffix 这里可能会触发一次网络请求
         for idx, (q, t, b, s) in enumerate(quality_suffix):
             url = self.api.get_song_url_v2(mid, media_id, t)
             if url:
-                q_media_mapping[Quality.Audio(q)] = Media(url, bitrate=b, format=s)
+                q_media_mapping[Quality.Audio(q)] = Media(url,
+                                                          bitrate=b,
+                                                          format=s)
                 # 一般来说，高品质有权限 低品质也会有权限，减少网络请求。
                 # 这里把值设置为 UNFETCHED_MEDIA，作为一个标记。
                 for i in range(idx + 1, len(quality_suffix)):
-                    q_media_mapping[
-                        Quality.Audio(quality_suffix[i][0])
-                    ] = UNFETCHED_MEDIA
+                    q_media_mapping[Quality.Audio(
+                        quality_suffix[i][0])] = UNFETCHED_MEDIA
                 break
-        song.cache_set("q_media_mapping", q_media_mapping)
+        # 根据过去经验，url 一段时间之后会过期。
+        # 具体多久，不是很清楚。
+        song.cache_set("q_media_mapping", q_media_mapping, ttl=3600)
         return q_media_mapping
 
     def artist_get(self, identifier):
@@ -281,14 +290,12 @@ class QQProvider(AbstractProvider, ProviderV2):
         return artist
 
     def artist_create_songs_rd(self, artist):
-        return create_g(
-            self.api.artist_songs, int(artist.identifier), _ArtistSongSchema
-        )
+        return create_g(self.api.artist_songs, int(artist.identifier),
+                        _ArtistSongSchema)
 
     def artist_create_albums_rd(self, artist):
-        return create_g(
-            self.api.artist_albums, int(artist.identifier), _BriefAlbumSchema
-        )
+        return create_g(self.api.artist_albums, int(artist.identifier),
+                        _BriefAlbumSchema)
 
     def album_get(self, identifier):
         data_album = self.api.album_detail(int(identifier))
@@ -344,7 +351,9 @@ class QQProvider(AbstractProvider, ProviderV2):
             pl["dissid"] = pl["content_id"]
             pl["dissname"] = pl["title"]
             pl["logo"] = pl["cover"]
-        return [_deserialize(playlist, QQPlaylistSchema) for playlist in playlists]
+        return [
+            _deserialize(playlist, QQPlaylistSchema) for playlist in playlists
+        ]
 
     def rec_list_daily_songs(self):
         # TODO: cache API result
@@ -354,10 +363,10 @@ class QQProvider(AbstractProvider, ProviderV2):
             if 'moduleID' not in shelf_['extra_info']:
                 for batch in shelf_['v_niche']:
                     for card in batch['v_card']:
-                        if (
-                            card['extra_info'].get('moduleID', '').startswith('recforyou')
-                            and card['jumptype'] == 10014  # 10014->playlist
-                        ):
+                        if (card['extra_info'].get(
+                                'moduleID', '').startswith('recforyou') and
+                                card['jumptype'] == 10014  # 10014->playlist
+                            ):
                             card = card
                             break
         if card is None:
@@ -383,13 +392,13 @@ class QQProvider(AbstractProvider, ProviderV2):
             for card in batch['v_card']:
                 if card['jumptype'] == 10014:  # 10014->playlist
                     playlists.append(
-                        PlaylistModel(identifier=str(card['id']),
-                                      source=SOURCE,
-                                      name=card['title'],
-                                      cover=card['cover'],
-                                      description=card['miscellany']['rcmdtemplate'],
-                                      play_count=card['cnt'])
-                    )
+                        PlaylistModel(
+                            identifier=str(card['id']),
+                            source=SOURCE,
+                            name=card['title'],
+                            cover=card['cover'],
+                            description=card['miscellany']['rcmdtemplate'],
+                            play_count=card['cnt']))
         return playlists
 
     def rec_a_collection_of_songs(self):
@@ -416,10 +425,11 @@ class QQProvider(AbstractProvider, ProviderV2):
                         song_ids.append(song_id)
 
         tracks = self.api.batch_song_details(song_ids)
-        return Collection(name=title,
-                          type_=CollectionType.only_songs,
-                          models=[_deserialize(track, QQSongSchema) for track in tracks],
-                          description='')
+        return Collection(
+            name=title,
+            type_=CollectionType.only_songs,
+            models=[_deserialize(track, QQSongSchema) for track in tracks],
+            description='')
 
     def current_user_get_radio_songs(self):
         songs_data = self.api.get_radio_music()
@@ -431,11 +441,9 @@ class QQProvider(AbstractProvider, ProviderV2):
             return []
         playlists = self._model_cache_get_or_fetch(user, "playlists")
         fav_pid = self._model_cache_get_or_fetch(user, "fav_pid")
-        my_love = BriefPlaylistModel(
-            source=SOURCE,
-            identifier=str(fav_pid),
-            name='我喜欢'
-        )
+        my_love = BriefPlaylistModel(source=SOURCE,
+                                     identifier=str(fav_pid),
+                                     name='我喜欢')
         return [my_love] + playlists
 
     def current_user_fav_create_songs_rd(self):
@@ -473,7 +481,9 @@ class QQProvider(AbstractProvider, ProviderV2):
         # HACK: 给 playlist 加一个 disstid 字段，这样可以兼容 QQPlaylistSchema
         for playlist in playlists:
             playlist["disstid"] = playlist["dissid"]
-        return [_deserialize(playlist, QQPlaylistSchema) for playlist in playlists]
+        return [
+            _deserialize(playlist, QQPlaylistSchema) for playlist in playlists
+        ]
 
     def has_current_user(self):
         return self._user is not None
@@ -483,7 +493,9 @@ class QQProvider(AbstractProvider, ProviderV2):
 
     def song_list_similar(self, song):
         data_songs = self.api.song_similar(int(song.identifier))
-        return [_deserialize(data_song, QQSongSchema) for data_song in data_songs]
+        return [
+            _deserialize(data_song, QQSongSchema) for data_song in data_songs
+        ]
 
     def current_user_dislike_create_songs_rd(self):
         user = self.get_current_user()

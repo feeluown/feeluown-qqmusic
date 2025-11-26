@@ -91,7 +91,8 @@ class QQSongSchema(Schema):
     mid = fields.Str(data_key="mid", required=True)
     duration = fields.Float(data_key="interval", required=True)
     title = fields.Str(data_key="title", required=True)
-    artists = fields.List(fields.Nested("_SongArtistSchema"), data_key="singer")
+    artists = fields.List(fields.Nested("_SongArtistSchema"),
+                          data_key="singer")
     album = fields.Nested("_SongAlbumSchema", required=True)
     files = fields.Dict(data_key="file", missing={})
     mv = fields.Dict(required=True)
@@ -106,6 +107,8 @@ class QQSongSchema(Schema):
             artists=data.get("artists", []),
             album=data["album"],
         )
+        # FIXME: mid,media_id,mv_id 这几个字段应该合并成一个字段。
+        # 因为它们都是不变的，并且可以在同一个请求中拿到。
         song.cache_set("mid", data["mid"])
         song.cache_set("media_id", data["files"]["media_mid"])
         song.cache_set("mv_id", data["mv"].get("vid", 0))
