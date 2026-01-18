@@ -457,7 +457,7 @@ class API(object):
         }
         js = self.rpc(data)
         return js['req_0']['data']
-    
+
     def get_comment(self, comment_id):
         url = api_base_url + f'/base/fcgi-bin/fcg_global_comment_h5.fcg?biztype=1&cmd=8&topid={comment_id}&pagenum=0&pagesize=25'
         res_data = requests.get(url, headers=self._headers)
@@ -539,27 +539,16 @@ class API(object):
         js = self.rpc(payload)
         return js['getMvUrl']['data'][vid]
 
-    def get_radio_music(self):
+    def get_radio_music(self, num=10):
         payload = {
             'songlist': {
                 'module': "mb_track_radio_svr",
                 'method': "get_radio_track",
                 'param': {
-                    'id': 99,
-                    'firstplay': 1,
-                    'num': 15
+                    'id': 99,  # radio id，对应“猜你喜欢”这个电台
+                    'firstplay': 0,
+                    'num': num  # 单次获取的歌曲数量
                 },
-            },
-            'radiolist': {
-                'module': "pf.radiosvr",
-                'method': "GetRadiolist",
-                'param': {
-                    'ct': "24"
-                },
-            },
-            'comm': {
-                'ct': 24,
-                'cv': 0
             },
         }
         js = self.rpc(payload)

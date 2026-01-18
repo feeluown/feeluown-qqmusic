@@ -431,8 +431,8 @@ class QQProvider(AbstractProvider, ProviderV2):
             models=[_deserialize(track, QQSongSchema) for track in tracks],
             description='')
 
-    def current_user_get_radio_songs(self):
-        songs_data = self.api.get_radio_music()
+    def current_user_list_radio_songs(self, count):
+        songs_data = self.api.get_radio_music(count)
         return [_deserialize(s, QQSongSchema) for s in songs_data]
 
     def current_user_list_playlists(self):
