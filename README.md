@@ -20,6 +20,9 @@ pip3 install fuo-qqmusic
 [操作示例](https://github.com/feeluown/feeluown-qqmusic/issues/6)。
 
 ## changelog
+### 1.0.15 (2026-01-18)
+- 支持猜你喜欢电台（配合 FeelUOwn v5.0a1 可用）
+
 ### 1.0.14 (2025-11-27)
 - 尝试修复 url 过期的问题
 
