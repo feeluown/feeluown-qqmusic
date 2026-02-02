@@ -29,7 +29,7 @@ setup(
     install_requires=[
         'feeluown>=4.1.13',
         'requests',
-        'marshmallow>=3.0,<4.0.0'
+        'marshmallow>=3.13.0,<4.0.0'
     ],
     entry_points={
         'fuo.plugins_v1': [

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseSchema(Schema):
-    source = fields.Str(missing="qqmusic")
+    source = fields.Str(load_default="qqmusic")
 
     class Meta:
         unknown = EXCLUDE
@@ -94,7 +94,7 @@ class QQSongSchema(Schema):
     artists = fields.List(fields.Nested("_SongArtistSchema"),
                           data_key="singer")
     album = fields.Nested("_SongAlbumSchema", required=True)
-    files = fields.Dict(data_key="file", missing={})
+    files = fields.Dict(data_key="file", load_default={})
     mv = fields.Dict(required=True)
 
     @post_load
@@ -221,9 +221,9 @@ class QQArtistSchema(Schema):
     mid = fields.Str(data_key="singer_mid", required=True)
     name = fields.Str(data_key="singer_name", required=True)
 
-    description = fields.Str(data_key="SingerDesc", missing="")
+    description = fields.Str(data_key="SingerDesc", load_default="")
     hot_songs = fields.List(
-        fields.Nested(_ArtistSongSchema), data_key="list", missing=list
+        fields.Nested(_ArtistSongSchema), data_key="list", load_default=list
     )
 
     @post_load
