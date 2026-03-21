@@ -43,6 +43,7 @@ from feeluown.utils.reader import create_reader, SequentialReader
 from .api import API
 from .login import read_cookies
 from .excs import QQIOError
+from .i18n import t
 
 
 logger = logging.getLogger(__name__)
@@ -95,7 +96,7 @@ class QQProvider(AbstractProvider, ProviderV2):
 
     @property
     def name(self):
-        return "QQ 音乐"
+        return t('provider-name')
 
     def auto_login(self):
         cookies = read_cookies()
