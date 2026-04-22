@@ -40,10 +40,11 @@ from feeluown.library import (
 from feeluown.media import Media, Quality
 from feeluown.utils.dispatch import Signal
 from feeluown.utils.reader import create_reader, SequentialReader
+from feeluown.i18n import t
 from .api import API
 from .login import read_cookies
 from .excs import QQIOError
-from .i18n import t
+from .consts import domain
 
 
 logger = logging.getLogger(__name__)
@@ -96,7 +97,7 @@ class QQProvider(AbstractProvider, ProviderV2):
 
     @property
     def name(self):
-        return t('provider-name')
+        return t("provider-name", domain=domain)
 
     def auto_login(self):
         cookies = read_cookies()

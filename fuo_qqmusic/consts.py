@@ -1,5 +1,6 @@
 from feeluown.consts import DATA_DIR
 
+domain = "fuo-qqmusic"
 
 COOKIES_FILE = DATA_DIR + '/qqmusic_cookies.json'
 USER_PW_FILE = DATA_DIR + '/qm_user_pw.json'
