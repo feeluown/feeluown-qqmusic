@@ -3,7 +3,6 @@ from typing import List, Optional, Protocol, Tuple
 from feeluown.excs import ModelNotFound
 from feeluown.library import (
     AbstractProvider,
-    BriefCommentModel,
     BriefSongModel,
     BriefPlaylistModel,
     BriefUserModel,
@@ -30,7 +29,6 @@ from feeluown.library import (
     SupportsCurrentUserDislikeSongsReader,
     SupportsCurrentUserDislikeAddSong,
     SupportsCurrentUserDislikeRemoveSong,
-    SupportsCurrentUserChanged,
     SimpleSearchResult,
     SearchType,
     ModelState,
@@ -200,10 +198,11 @@ class QQProvider(AbstractProvider, ProviderV2):
         return [Quality.Video(k) for k, v in q_media_mapping.items() if v]
 
     def song_list_quality(self, song) -> List[Quality.Audio]:
-        """List all possible qualities
+        """List all possible qualities.
 
-        Please ensure all the qualities are valid. `song_get_media(song, quality)`
-        must not return None with a valid quality.
+        Please ensure all the qualities are valid.
+        `song_get_media(song, quality)` must not return None
+        with a valid quality.
         """
         return list(self._song_get_q_media_mapping(song))
 
@@ -243,7 +242,7 @@ class QQProvider(AbstractProvider, ProviderV2):
         media_id = self._model_cache_get_or_fetch(song, "media_id")
         media = q_media_mapping.get(quality)
         if media is UNFETCHED_MEDIA:
-            for q, t, b, s in quality_suffix:
+            for q, quality_type, b, s in quality_suffix:
                 if quality == Quality.Audio(q):
                     url = self.api.get_song_url_v2(mid, media_id, t)
                     if url:
@@ -268,8 +267,8 @@ class QQProvider(AbstractProvider, ProviderV2):
         media_id = self._model_cache_get_or_fetch(song, "media_id")
         q_media_mapping = {}
         # 注：self.quality_suffix 这里可能会触发一次网络请求
-        for idx, (q, t, b, s) in enumerate(quality_suffix):
-            url = self.api.get_song_url_v2(mid, media_id, t)
+        for idx, (q, quality_type, b, s) in enumerate(quality_suffix):
+            url = self.api.get_song_url_v2(mid, media_id, quality_type)
             if url:
                 q_media_mapping[Quality.Audio(q)] = Media(url,
                                                           bitrate=b,
@@ -358,17 +357,16 @@ class QQProvider(AbstractProvider, ProviderV2):
         ]
 
     def rec_list_daily_songs(self):
-        # TODO: cache API result
         feed = self.api.get_recommend_feed()
         card = None
         for shelf_ in feed['v_shelf']:
             if 'moduleID' not in shelf_['extra_info']:
                 for batch in shelf_['v_niche']:
                     for card in batch['v_card']:
-                        if (card['extra_info'].get(
-                                'moduleID', '').startswith('recforyou') and
-                                card['jumptype'] == 10014  # 10014->playlist
-                            ):
+                        extra_info = card['extra_info']
+                        is_playlist = card['jumptype'] == 10014
+                        if (extra_info.get('moduleID', '')
+                                .startswith('recforyou') and is_playlist):
                             card = card
                             break
         if card is None:
@@ -379,11 +377,9 @@ class QQProvider(AbstractProvider, ProviderV2):
         return self.playlist_create_songs_rd(playlist).readall()
 
     def rec_list_daily_playlists(self):
-        # TODO: cache API result
         feed = self.api.get_recommend_feed()
         shelf = None
         for shelf_ in feed['v_shelf']:
-            # I guess 10046 means 'song'.
             if shelf_['extra_info'].get('moduleID', '').startswith('playlist'):
                 shelf = shelf_
                 break
@@ -537,7 +533,10 @@ def _deserialize(data, schema_cls):
 
 def create_g(func, identifier, schema):
     data = func(identifier, page=1)
-    total = int(data["totalNum"] if schema == _ArtistSongSchema else data["total"])
+    total = int(
+        data["totalNum"]
+        if schema == _ArtistSongSchema else data["total"]
+    )
 
     def g():
         nonlocal data
@@ -545,9 +544,11 @@ def create_g(func, identifier, schema):
             yield from ()
         else:
             page = 1
-            while data["songList"] if schema == _ArtistSongSchema else data["list"]:
+            while (data["songList"]
+                    if schema == _ArtistSongSchema else data["list"]):
                 obj_data_list = (
-                    data["songList"] if schema == _ArtistSongSchema else data["list"]
+                    data["songList"]
+                    if schema == _ArtistSongSchema else data["list"]
                 )
                 for obj_data in obj_data_list:
                     obj = _deserialize(obj_data, schema)
@@ -578,7 +579,10 @@ def search(keyword, **kwargs):
         albums = [_deserialize(album, SearchAlbumSchema) for album in data]
         return SimpleSearchResult(q=keyword, albums=albums)
     elif type_ == SearchType.pl:
-        playlists = [_deserialize(playlist, SearchPlaylistSchema) for playlist in data]
+        playlists = [
+            _deserialize(playlist, SearchPlaylistSchema)
+            for playlist in data
+        ]
         return SimpleSearchResult(q=keyword, playlists=playlists)
     elif type_ == SearchType.vi:
         models = [_deserialize(model, SearchMVSchema) for model in data]

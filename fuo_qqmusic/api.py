@@ -17,13 +17,15 @@ logger = logging.getLogger(__name__)
 
 api_base_url = 'http://c.y.qq.com'
 
+
 class CodeShouldBe200(QQIOError):
     def __init__(self, data):
         self._code = data['code']
         self._data = data
 
     def __str__(self):
-        return f'json code field should be 200, got {self._code}. data: {self._data}'
+        return f'json code field should be 200, got {self._code}. ' \
+               f'data: {self._data}'
 
 
 def djb2(string):
@@ -91,11 +93,12 @@ class API(object):
         if cookies:
             self._cookies = cookies
             self._uin = self.get_uin_from_cookies(cookies)
-            self._guid = cookies.get('guid', str(int(random.random() * 1000000000)))
+            self._guid = cookies.get(
+                    'guid', str(int(random.random() * 1000000000)))
         else:
             self._cookies = None
             self._uin = '0'
-            self._guid = str(int(random.random() * 1000000000))  # 暂时不知道 guid 有什么用
+            self._guid = str(int(random.random() * 1000000000))
 
     def get_uin_from_cookies(self, cookies):
         if 'wxuin' in cookies:
@@ -301,8 +304,11 @@ class API(object):
                 'method': 'DelSonglist',
                 'module': 'music.musicasset.PlaylistDetailWrite',
                 'param': {
-                    'dirId': playlist_id,  # int
-                    'v_songInfo': [{'songId': int(song_id), 'songType': 0} for song_id in song_id_list]
+                    'dirId': playlist_id,
+                    'v_songInfo': [
+                        {'songId': int(song_id), 'songType': 0}
+                        for song_id in song_id_list
+                    ],
                 }
             }
         }
@@ -315,8 +321,11 @@ class API(object):
                 'method': 'AddSonglist',
                 'module': 'music.musicasset.PlaylistDetailWrite',
                 'param': {
-                    'dirId': int(playlist_id),  # int
-                    'v_songInfo': [{'songId': int(song_id), 'songType': 0} for song_id in song_id_list]
+                    'dirId': int(playlist_id),
+                    'v_songInfo': [
+                        {'songId': int(song_id), 'songType': 0}
+                        for song_id in song_id_list
+                    ],
                 }
             }
         }
@@ -459,7 +468,9 @@ class API(object):
         return js['req_0']['data']
 
     def get_comment(self, comment_id):
-        url = api_base_url + f'/base/fcgi-bin/fcg_global_comment_h5.fcg?biztype=1&cmd=8&topid={comment_id}&pagenum=0&pagesize=25'
+        url = api_base_url + \
+            f'/base/fcgi-bin/fcg_global_comment_h5.fcg' \
+            f'?biztype=1&cmd=8&topid={comment_id}&pagenum=0&pagesize=25'
         res_data = requests.get(url, headers=self._headers)
         if res_data.status_code == 200:
             return res_data.json()
@@ -565,16 +576,16 @@ class API(object):
         payload = {
             'req': {
                 "module": "music.srfDissInfo.aiDissInfo",
-                "method":"uniform_get_Dissinfo",
+                "method": "uniform_get_Dissinfo",
                 "param": {
-                    "disstid":dissid,
-                    "userinfo":1,  # 不懂啥意思
-                    "tag":1,  # 不懂啥意思
-                    "orderlist":1,
+                    "disstid": dissid,
+                    "userinfo": 1,
+                    "tag": 1,
+                    "orderlist": 1,
                     "song_begin": offset,
                     "song_num": limit,
-                    "onlysonglist":0,
-                    "enc_host_uin":""  # 注：即使登录了，这个也是空
+                    "onlysonglist": 0,
+                    "enc_host_uin": ""
                 }
             }
         }
@@ -677,7 +688,8 @@ class API(object):
                 # 这个 uin 似乎只有三位数
                 url = f'{prefix}{q_filename}?{params_str}'
                 print(url)
-                _resp = requests.head(url, headers=self._headers, cookies=self._cookies)
+                _resp = requests.head(
+                    url, headers=self._headers, cookies=self._cookies)
                 if _resp.status_code == 200:
                     valid_urls[quality] = url
                     logger.info(f'song:{song_mid} quality:{q} url is valid')
@@ -738,25 +750,26 @@ class API(object):
             'hostUin': 0,
             'format': 'json',
             'inCharset': 'utf8',
-            'outCharset': 'utf-8¬ice=0',
+            'outCharset': 'utf-8',
             'platform': 'yqq.json',
             'needNewCode': 0,
             'data': data_str
         }
         url = 'https://u.y.qq.com/cgi-bin/musicu.fcg'
-        # TODO: 似乎存在一种有效时间更长的cookies, https://github.com/PeterDing/chord
+        # TODO: 似乎存在一种有效时间更长的cookies
         resp = requests.get(url, params=params,
                             headers=self._headers, cookies=self._cookies)
         js = resp.json()
         midurlinfo = js['req_0'].get('data', {}).get('midurlinfo')
         if midurlinfo and midurlinfo[0]['purl']:
-            return 'http://isure.stream.qqmusic.qq.com/{}'.format(midurlinfo[0]['purl'])
+            return 'http://isure.stream.qqmusic.qq.com/{}'.format(
+                midurlinfo[0]['purl'])
         return ''
 
     class DislikeListType(Enum):
         singer = 2
         song = 3
-        _style_unsupported = 4 # TODO: 这是什么？似乎是不喜欢的风格列表，不确定，暂时不支持
+        _style_unsupported = 4  # noqa: F401
 
     def get_dislike_list(self, page=1, type_=DislikeListType.song, last_id=0):
         payload = {
@@ -766,9 +779,13 @@ class API(object):
                 "param": {
                     "Cmd": type_.value,
                     "Page": page,
-                    "SongLastid": last_id if type_ == API.DislikeListType.song else 0,
+                    "SongLastid": (
+                        last_id
+                        if type_ == API.DislikeListType.song else 0
+                    ),
                     "SingersLastid": (
-                        last_id if type_ == API.DislikeListType.singer else 0
+                        last_id
+                        if type_ == API.DislikeListType.singer else 0
                     ),
                 },
             },
@@ -803,7 +820,8 @@ class API(object):
              },
         }
         js = self.rpc(payload)
-        # Response example, {'code': 0, 'data': {'Retcode': 0, 'Msg': '', 'Token': ''}}
+        # Response example:
+        # {'code': 0, 'data': {'Retcode': 0, 'Msg': '', 'Token': ''}}
         CodeShouldBe0.check(js['req_0'])
         return js['req_0']['data']
 

@@ -175,6 +175,7 @@ class SearchAlbumSchema(_BriefAlbumSchema):
     artists = fields.List(fields.Nested(_SongArtistSchema),
                           data_key="singer_list",
                           required=True)
+
     @post_load
     def create_model(self, data, **kwargs):
         data['description'] = ''
