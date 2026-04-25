@@ -13,7 +13,7 @@ setup(
         'fuo_qqmusic',
     ],
     package_data={
-        '': ['assets/*.svg',]
+        '': ['assets/*.svg', 'locales/**/*.ftl'],
     },
     url='https://github.com/feeluown/feeluown-qqmusic',
     keywords=['feeluown', 'plugin', 'qqmusic'],
@@ -27,7 +27,7 @@ setup(
         'Programming Language :: Python :: 3 :: Only',
     ],
     install_requires=[
-        'feeluown>=4.1.13',
+        'feeluown>5.1',
         'requests',
         'marshmallow>=3.13.0,<4.0.0'
     ],

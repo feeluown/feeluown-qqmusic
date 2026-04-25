@@ -30,9 +30,10 @@ class ProviderUI(AbstractProviderUi):
             # According to #14, we have two ways to login:
             # 1. the default way, as the code shows
             # 2. a way for VIP user(maybe):
-            #    - url: https://xui.ptlogin2.qq.com/cgi-bin/xlogin?appid=1006102
-            #           &daid=384&low_login=1&pt_no_auth=1
-            #           &s_url=https://y.qq.com/vip/daren_recruit/apply.html&style=40
+            #    - url: https://xui.ptlogin2.qq.com/cgi-bin/xlogin?
+            #           appid=1006102&daid=384&low_login=1&pt_no_auth=1
+            #           &s_url=https://y.qq.com/vip/daren_recruit/
+            #           apply.html&style=40
             #
             #    - keys: ['skey']
             url = os.getenv('FUO_QQMUSIC_LOGIN_URL', 'https://y.qq.com')
@@ -54,10 +55,12 @@ class ProviderUI(AbstractProviderUi):
             #   'psrf_qqaccess_token',
             #   'psrf_qqopenid',
             #   'psrf_qqrefresh_token',
-            keys_str = os.getenv('FUO_QQMUSIC_LOGIN_COOKIE_KEYS',
-                                 ('qqmusic_key,wxuin,qm_keyst'
-                                  '|qqmusic_key,uin,qm_keyst'))
-            self._dialog = LoginDialog(url, [keys.split(',') for keys in keys_str.split('|')])
+            keys_str = os.getenv(
+                'FUO_QQMUSIC_LOGIN_COOKIE_KEYS',
+                ('qqmusic_key,wxuin,qm_keyst'
+                 '|qqmusic_key,uin,qm_keyst'))
+            keys_list = [keys.split(',') for keys in keys_str.split('|')]
+            self._dialog = LoginDialog(url, keys_list)
             self._dialog.login_succeed.connect(self.on_login_succeed)
             self._dialog.show()
             self._dialog.autologin()
@@ -80,7 +83,6 @@ class ProviderUI(AbstractProviderUi):
     def _re_login(self):
         provider.auth(None)
         self.login_or_go_home()
-
 
 
 class LoginDialog(CookiesLoginDialog):

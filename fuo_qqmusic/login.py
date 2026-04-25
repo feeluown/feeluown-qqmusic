@@ -21,4 +21,3 @@ def write_cookies(user, cookies):
     }
     with open(USER_INFO_FILE, 'w') as f:
         json.dump(js, f, indent=2)
-
