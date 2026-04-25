@@ -579,13 +579,13 @@ class API(object):
                 "method": "uniform_get_Dissinfo",
                 "param": {
                     "disstid": dissid,
-                    "userinfo": 1,
-                    "tag": 1,
+                    "userinfo": 1,  # 不懂啥意思
+                    "tag": 1,  # 不懂啥意思
                     "orderlist": 1,
                     "song_begin": offset,
                     "song_num": limit,
                     "onlysonglist": 0,
-                    "enc_host_uin": ""
+                    "enc_host_uin": ""  # 注：即使登录了，这个也是空
                 }
             }
         }
